@@ -14,7 +14,7 @@ import { CategoryManager } from './components/CategoryManager';
 import type { Income, Expense } from './types';
 import { Plus, Wallet, Building2, ArrowRightLeft, LayoutDashboard, ClipboardList, LogOut } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
-import { seedDatabase } from './lib/seed';
+
 import { useAccountStore } from './stores/accountStore';
 import { useCategoryStore } from './stores/categoryStore';
 import { useTransactionStore } from './stores/transactionStore';
