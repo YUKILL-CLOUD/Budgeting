@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, DollarSign, ArrowRight } from 'lucide-react';
+import { X, DollarSign } from 'lucide-react';
 
 interface ContributeModalProps {
     goalName: string;
