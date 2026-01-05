@@ -1,6 +1,7 @@
 import { create } from 'zustand';
-import { db } from '../lib/db';
+import { supabase } from '../lib/supabase';
 import type { Category } from '../lib/db';
+import { toast } from 'sonner';
 
 interface CategoryStore {
     categories: Category[];
@@ -18,23 +19,71 @@ export const useCategoryStore = create<CategoryStore>((set, get) => ({
 
     fetchCategories: async () => {
         set({ loading: true });
-        const categories = await db.categories.toArray();
-        set({ categories, loading: false });
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            set({ categories: [], loading: false });
+            return;
+        }
+
+        const { data, error } = await supabase
+            .from('categories')
+            .select('*')
+            .order('name', { ascending: true });
+
+        if (error) {
+            console.error('Error fetching categories:', error);
+            toast.error('Failed to sync categories');
+        } else {
+            set({ categories: data as Category[] });
+        }
+        set({ loading: false });
     },
 
     addCategory: async (category) => {
-        await db.categories.add(category);
-        await get().fetchCategories();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { error } = await supabase
+            .from('categories')
+            .insert({
+                ...category,
+                user_id: user.id
+            });
+
+        if (error) {
+            console.error('Error adding category:', error);
+            toast.error('Failed to add category');
+        } else {
+            await get().fetchCategories();
+        }
     },
 
     updateCategory: async (id, updates) => {
-        await db.categories.update(id, updates);
-        await get().fetchCategories();
+        const { error } = await supabase
+            .from('categories')
+            .update(updates)
+            .eq('id', id);
+
+        if (error) {
+            console.error('Error updating category:', error);
+            toast.error('Failed to update category');
+        } else {
+            await get().fetchCategories();
+        }
     },
 
     deleteCategory: async (id) => {
-        await db.categories.delete(id);
-        await get().fetchCategories();
+        const { error } = await supabase
+            .from('categories')
+            .delete()
+            .eq('id', id);
+
+        if (error) {
+            console.error('Error deleting category:', error);
+            toast.error('Failed to delete category');
+        } else {
+            await get().fetchCategories();
+        }
     },
 
     getCategoriesByType: (type) => {

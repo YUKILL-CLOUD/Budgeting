@@ -1,6 +1,7 @@
 import { create } from 'zustand';
-import { db } from '../lib/db';
+import { supabase } from '../lib/supabase';
 import type { Account } from '../lib/db';
+import { toast } from 'sonner';
 
 interface AccountStore {
     accounts: Account[];
@@ -18,29 +19,76 @@ export const useAccountStore = create<AccountStore>((set, get) => ({
 
     fetchAccounts: async () => {
         set({ loading: true });
-        const accounts = await db.accounts.toArray();
-        set({ accounts, loading: false });
+
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            set({ accounts: [], loading: false });
+            return;
+        }
+
+        const { data, error } = await supabase
+            .from('accounts')
+            .select('*')
+            .order('created_at', { ascending: true });
+
+        if (error) {
+            console.error('Error fetching accounts:', error);
+            toast.error('Failed to sync accounts');
+        } else {
+            set({ accounts: data as Account[] });
+        }
+        set({ loading: false });
     },
 
     addAccount: async (account) => {
-        await db.accounts.add({
-            ...account,
-            createdAt: new Date(),
-        });
-        await get().fetchAccounts();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { error } = await supabase
+            .from('accounts')
+            .insert({
+                ...account,
+                user_id: user.id
+            });
+
+        if (error) {
+            console.error('Error adding account:', error);
+            toast.error('Failed to add account');
+        } else {
+            await get().fetchAccounts();
+        }
     },
 
     updateAccount: async (id, updates) => {
-        await db.accounts.update(id, updates);
-        await get().fetchAccounts();
+        const { error } = await supabase
+            .from('accounts')
+            .update(updates)
+            .eq('id', id);
+
+        if (error) {
+            console.error('Error updating account:', error);
+            toast.error('Failed to update account');
+        } else {
+            await get().fetchAccounts();
+        }
     },
 
     deleteAccount: async (id) => {
-        await db.accounts.delete(id);
-        await get().fetchAccounts();
+        const { error } = await supabase
+            .from('accounts')
+            .delete()
+            .eq('id', id);
+
+        if (error) {
+            console.error('Error deleting account:', error);
+            toast.error('Failed to delete account');
+        } else {
+            await get().fetchAccounts();
+        }
     },
 
     getTotalBalance: () => {
-        return get().accounts.reduce((sum, acc) => sum + acc.balance, 0);
+        return get().accounts.reduce((sum, acc) => sum + (Number(acc.balance) || 0), 0);
     },
 }));

@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { supabase } from './lib/supabase';
+import { AuthPage } from './components/AuthPage';
 import { BudgetForm } from './components/BudgetForm';
 import { BudgetSummary } from './components/BudgetSummary';
 import { PaycheckAllocator } from './components/PaycheckAllocator';
@@ -10,17 +12,34 @@ import { BudgetChart } from './components/BudgetChart';
 import { MainDashboard } from './components/MainDashboard';
 import { CategoryManager } from './components/CategoryManager';
 import type { Income, Expense } from './types';
-import { Plus, Wallet, Building2, ArrowRightLeft, LayoutDashboard, ClipboardList } from 'lucide-react';
-import { Toaster } from 'sonner';
+import { Plus, Wallet, Building2, ArrowRightLeft, LayoutDashboard, ClipboardList, LogOut } from 'lucide-react';
+import { Toaster, toast } from 'sonner';
 import { seedDatabase } from './lib/seed';
 import { useAccountStore } from './stores/accountStore';
 import { useCategoryStore } from './stores/categoryStore';
 import { useTransactionStore } from './stores/transactionStore';
 import { useGoalStore } from './stores/goalStore';
+import type { Session } from '@supabase/supabase-js';
 
 type AppTab = 'overview' | 'planning' | 'accounts' | 'transactions';
 
 function App() {
+  const [session, setSession] = useState<Session | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   // Persistence Keys
   const STORAGE_KEY_INCOME = 'budget_incomes_v2';
   const STORAGE_KEY_EXPENSE = 'budget_expenses_v2';
@@ -68,15 +87,17 @@ function App() {
 
   // Initialize database
   useEffect(() => {
-    const initDB = async () => {
-      await seedDatabase();
-      await fetchAccounts();
-      await fetchCategories();
-      await fetchTransactions();
-      await fetchGoals();
-    };
-    initDB();
-  }, [fetchAccounts, fetchCategories, fetchTransactions, fetchGoals]);
+    if (session) {
+      const initDB = async () => {
+        // seedDatabase(); // Temporarily disabled for cloud migration to avoid duplicate logical issues initially
+        await fetchAccounts();
+        await fetchCategories();
+        await fetchTransactions();
+        await fetchGoals();
+      };
+      initDB();
+    }
+  }, [session, fetchAccounts, fetchCategories, fetchTransactions, fetchGoals]);
 
   // Navigation state
   const [activeTab, setActiveTab] = useState<AppTab>('overview');
@@ -97,15 +118,35 @@ function App() {
     localStorage.setItem(STORAGE_KEY_SAVINGS, savings.toString());
   }, [savings]);
 
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    toast.success('Signed out successfully');
+  };
+
+  if (!session) {
+    return (
+      <>
+        <Toaster position="top-right" richColors />
+        <AuthPage />
+      </>
+    );
+  }
+
   return (
     <div className="app-main-wrapper">
       <Toaster position="top-right" richColors />
       <header className="app-header">
-        <div className="logo">
-          <Wallet className="logo-icon" size={32} />
-          <h1>Zero<span className="accent">Budget</span></h1>
+        <div className="header-content" style={{ position: 'relative' }}>
+          <div className="logo">
+            <Wallet className="logo-icon" size={32} />
+            <h1>Zero<span className="accent">Budget</span></h1>
+          </div>
+          <p className="tagline">Personal Zero-Based Budgeting (PHP)</p>
+
+          <button onClick={handleSignOut} className="btn-icon header-logout" title="Sign Out">
+            <LogOut size={20} />
+          </button>
         </div>
-        <p className="tagline">Personal Zero-Based Budgeting (PHP)</p>
       </header>
 
       {/* Navigation Tabs */}
