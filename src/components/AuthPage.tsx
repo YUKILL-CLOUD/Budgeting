@@ -7,8 +7,8 @@ export const AuthPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [mode, setMode] = useState<'signin' | 'signup' | 'magiclink'>('signin');
-    const [magicLinkSent, setMagicLinkSent] = useState(false);
+    const [mode, setMode] = useState<'signin' | 'signup' | 'recovery'>('signin');
+    const [recoverySent, setRecoverySent] = useState(false);
 
     const handleAuth = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -20,25 +20,20 @@ export const AuthPage: React.FC = () => {
 
         setLoading(true);
 
-        // Magic Link Flow
-        if (mode === 'magiclink') {
-            const { error } = await supabase.auth.signInWithOtp({
-                email,
-                options: {
-                    emailRedirectTo: window.location.origin,
-                },
+        if (mode === 'recovery') {
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: `${window.location.origin}/update-password`,
             });
             if (error) {
                 toast.error(error.message);
             } else {
-                setMagicLinkSent(true);
-                toast.success('Magic link sent! Check your email.');
+                setRecoverySent(true);
+                toast.success('Recovery email sent!');
             }
             setLoading(false);
             return;
         }
 
-        // Password Flow
         if (password.length < 6) {
             toast.error('Password must be at least 6 characters');
             setLoading(false);
@@ -70,7 +65,7 @@ export const AuthPage: React.FC = () => {
         setLoading(false);
     };
 
-    if (magicLinkSent) {
+    if (recoverySent) {
         return (
             <div className="auth-container">
                 <div className="auth-card success">
@@ -78,16 +73,10 @@ export const AuthPage: React.FC = () => {
                         <Mail size={32} />
                     </div>
                     <h2>Check your email</h2>
-                    <p>We've sent a magic login link to <br /><strong className="highlight-text">{email}</strong></p>
-                    <button
-                        className="btn-text-start-over"
-                        onClick={() => setMagicLinkSent(false)}
-                    >
-                        Use a different email
-                    </button>
+                    <p>We've sent a password reset link to <br /><strong className="highlight-text">{email}</strong></p>
                     <button
                         className="btn-text-link mt-4"
-                        onClick={() => { setMagicLinkSent(false); setMode('signin'); }}
+                        onClick={() => { setRecoverySent(false); setMode('signin'); }}
                     >
                         Back to Login
                     </button>
@@ -125,7 +114,7 @@ export const AuthPage: React.FC = () => {
                         </div>
                     </div>
 
-                    {mode !== 'magiclink' && (
+                    {mode !== 'recovery' && (
                         <div className="input-group-auth">
                             <label>Password</label>
                             <div className="input-wrapper-auth">
@@ -145,7 +134,7 @@ export const AuthPage: React.FC = () => {
                     <button type="submit" disabled={loading} className="btn-auth-submit">
                         {loading
                             ? 'Processing...'
-                            : (mode === 'signup' ? 'Create Account' : mode === 'magiclink' ? 'Send Magic Link' : 'Sign In')
+                            : (mode === 'signup' ? 'Create Account' : mode === 'recovery' ? 'Send Reset Link' : 'Sign In')
                         }
                         {!loading && <ArrowRight size={18} />}
                     </button>
@@ -153,8 +142,8 @@ export const AuthPage: React.FC = () => {
                     <div className="auth-mode-toggle">
                         {mode === 'signin' && (
                             <>
-                                <button type="button" className="btn-text-link mb-2" onClick={() => setMode('magiclink')}>
-                                    Forgot password? / Use Magic Link
+                                <button type="button" className="btn-text-link mb-2" onClick={() => setMode('recovery')}>
+                                    Forgot password?
                                 </button>
                                 <p>
                                     Don't have an account?
@@ -174,9 +163,9 @@ export const AuthPage: React.FC = () => {
                             </p>
                         )}
 
-                        {mode === 'magiclink' && (
+                        {mode === 'recovery' && (
                             <button type="button" className="btn-text-link" onClick={() => setMode('signin')}>
-                                Back to Password Login
+                                Back to Login
                             </button>
                         )}
                     </div>
