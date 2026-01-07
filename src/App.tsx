@@ -1,34 +1,44 @@
-import { useState, useEffect } from 'react';
-import { supabase } from './lib/supabase';
-import { AuthPage } from './components/AuthPage';
-import { BudgetForm } from './components/BudgetForm';
-import { BudgetSummary } from './components/BudgetSummary';
-import { PaycheckAllocator } from './components/PaycheckAllocator';
-import { WeeklyPlanner } from './components/WeeklyPlanner';
-import { AccountDashboard } from './components/AccountDashboard';
-import { TransactionHistory } from './components/TransactionHistory';
-import { TransactionModal } from './components/TransactionModal';
-import { BudgetChart } from './components/BudgetChart';
-import { MainDashboard } from './components/MainDashboard';
-import { CategoryManager } from './components/CategoryManager';
-import type { Income, Expense } from './types';
-import { Plus, Wallet, Building2, ArrowRightLeft, LayoutDashboard, ClipboardList, LogOut } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Wallet, LogOut, LayoutDashboard, Calculator, ArrowRightLeft, Target, Calendar } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
-
+import { MainDashboard } from './components/MainDashboard';
+import { BudgetSummary } from './components/BudgetSummary';
+import { BudgetChart } from './components/BudgetChart';
+import { TransactionHistory } from './components/TransactionHistory';
+import { PaycheckAllocator } from './components/PaycheckAllocator';
+import { BudgetForm } from './components/BudgetForm';
+import { CategoryManager } from './components/CategoryManager';
+import { AccountDashboard } from './components/AccountDashboard';
+import { WeeklyPlanner } from './components/WeeklyPlanner';
+import { AuthPage } from './components/AuthPage';
+import { UpdatePassword } from './components/UpdatePassword';
 import { useAccountStore } from './stores/accountStore';
 import { useCategoryStore } from './stores/categoryStore';
 import { useTransactionStore } from './stores/transactionStore';
 import { useGoalStore } from './stores/goalStore';
-import type { Session } from '@supabase/supabase-js';
-
-type AppTab = 'overview' | 'planning' | 'accounts' | 'transactions';
+import { supabase } from './lib/supabase';
+import { Session } from '@supabase/supabase-js';
 
 function App() {
   const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [isPaycheckModalOpen, setIsPaycheckModalOpen] = useState(false);
+  const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Check URL for password reset route
+  const isPasswordReset = window.location.pathname === '/update-password';
+
+  const { fetchAccounts, accounts } = useAccountStore();
+  const { fetchCategories } = useCategoryStore();
+  const { fetchTransactions } = useTransactionStore();
+  const { fetchGoals } = useGoalStore();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      setLoading(false);
     });
 
     const {
@@ -40,30 +50,16 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Persistence Keys
-  const STORAGE_KEY_INCOME = 'budget_incomes_v2';
-  const STORAGE_KEY_EXPENSE = 'budget_expenses_v2';
-  const STORAGE_KEY_SAVINGS = 'budget_savings_v2';
-
-  // Zustand stores
-  const fetchAccounts = useAccountStore(state => state.fetchAccounts);
-  const fetchCategories = useCategoryStore(state => state.fetchCategories);
-  const fetchTransactions = useTransactionStore(state => state.fetchTransactions);
-  const fetchGoals = useGoalStore(state => state.fetchGoals);
-
-  // Default Data
-  const defaultIncomes: Income[] = [
-    { id: '1', source: 'Day Job', weeklyAmount: 4000 },
-    useEffect(() => {
-      if (session) {
-        Promise.all([
-          fetchAccounts(),
-          fetchCategories(),
-          fetchTransactions(),
-          fetchGoals()
-        ]).catch(console.error);
-      }
-    }, [session, fetchAccounts, fetchCategories, fetchTransactions, fetchGoals]);
+  useEffect(() => {
+    if (session) {
+      Promise.all([
+        fetchAccounts(),
+        fetchCategories(),
+        fetchTransactions(),
+        fetchGoals()
+      ]).catch(console.error);
+    }
+  }, [session, fetchAccounts, fetchCategories, fetchTransactions, fetchGoals]);
 
   if (loading) {
     return <div className="loading-screen">Loading...</div>;
@@ -153,57 +149,66 @@ function App() {
         </button>
       </header>
 
+      <div className="main-layout">
+        <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
+          <nav className="nav-menu">
+            <button
+              className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('dashboard'); setSidebarOpen(false); }}
+            >
+              <LayoutDashboard size={20} /> Dashboard
+            </button>
+            <button
+              className={`nav-item ${activeTab === 'accounts' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('accounts'); setSidebarOpen(false); }}
+            >
+              <Wallet size={20} /> Accounts
+            </button>
+            <button
+              className={`nav-item ${activeTab === 'allocator' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('allocator'); setSidebarOpen(false); }}
+            >
+              <Calculator size={20} /> Paycheck Allocator
+            </button>
+            <button
+              className={`nav-item ${activeTab === 'planner' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('planner'); setSidebarOpen(false); }}
+            >
+              <Calendar size={20} /> Weekly Planner
+            </button>
+            <button
+              className={`nav-item ${activeTab === 'reports' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('reports'); setSidebarOpen(false); }}
+            >
+              <Target size={20} /> Reports & History
+            </button>
 
-      {activeTab === 'accounts' && (
-        <div className="accounts-view">
-          <AccountDashboard />
-        </div>
-      )}
+            <div className="nav-divider"></div>
 
-      {activeTab === 'transactions' && (
-        <div className="transactions-view">
-          <TransactionHistory
-            onManageCategories={() => setIsCategoryManagerOpen(true)}
-            onEditTransaction={(t) => {
-              setEditingTransaction(t);
-              setIsModalOpen(true);
-            }}
-          />
-        </div>
-      )}
-    </main>
+            <button
+              className="nav-item"
+              onClick={() => { setIsCategoryManagerOpen(true); setSidebarOpen(false); }}
+            >
+              <Target size={20} /> Manage Categories
+            </button>
+          </nav>
+        </aside>
 
-      {/* Floating Action Button */ }
-  <button
-    className="fab-button"
-    onClick={() => {
-      setEditingTransaction(null);
-      setIsModalOpen(true);
-    }}
-    title="Add Transaction"
-  >
-    <Plus size={24} />
-  </button>
+        <main className="content-area">
+          {renderContent()}
+        </main>
+      </div>
 
-  {/* Modals */ }
-  {
-    isModalOpen && (
-      <TransactionModal
-        onClose={() => {
-          setIsModalOpen(false);
-          setEditingTransaction(null);
-        }}
-        editingTransaction={editingTransaction}
+      <PaycheckAllocator
+        isOpen={isPaycheckModalOpen}
+        onClose={() => setIsPaycheckModalOpen(false)}
       />
-    )
-  }
 
-  {
-    isCategoryManagerOpen && (
-      <CategoryManager onClose={() => setIsCategoryManagerOpen(false)} />
-    )
-  }
-    </div >
+      <CategoryManager
+        isOpen={isCategoryManagerOpen}
+        onClose={() => setIsCategoryManagerOpen(false)}
+      />
+    </div>
   );
 }
 
