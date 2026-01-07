@@ -7,7 +7,8 @@ export const AuthPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+    const [mode, setMode] = useState<'signin' | 'signup' | 'magiclink'>('signin');
+    const [magicLinkSent, setMagicLinkSent] = useState(false);
 
     const handleAuth = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -16,12 +17,33 @@ export const AuthPage: React.FC = () => {
             toast.error('Please enter a valid email');
             return;
         }
-        if (password.length < 6) {
-            toast.error('Password must be at least 6 characters');
+
+        setLoading(true);
+
+        // Magic Link Flow
+        if (mode === 'magiclink') {
+            const { error } = await supabase.auth.signInWithOtp({
+                email,
+                options: {
+                    emailRedirectTo: window.location.origin,
+                },
+            });
+            if (error) {
+                toast.error(error.message);
+            } else {
+                setMagicLinkSent(true);
+                toast.success('Magic link sent! Check your email.');
+            }
+            setLoading(false);
             return;
         }
 
-        setLoading(true);
+        // Password Flow
+        if (password.length < 6) {
+            toast.error('Password must be at least 6 characters');
+            setLoading(false);
+            return;
+        }
 
         if (mode === 'signup') {
             const { error } = await supabase.auth.signUp({
@@ -32,7 +54,7 @@ export const AuthPage: React.FC = () => {
                 toast.error(error.message);
             } else {
                 toast.success('Account created! Please check your email to confirm.');
-                setMode('signin'); // Switch to sign in view or keep them here
+                setMode('signin');
             }
         } else {
             const { error } = await supabase.auth.signInWithPassword({
@@ -47,6 +69,32 @@ export const AuthPage: React.FC = () => {
         }
         setLoading(false);
     };
+
+    if (magicLinkSent) {
+        return (
+            <div className="auth-container">
+                <div className="auth-card success">
+                    <div className="auth-icon-box success">
+                        <Mail size={32} />
+                    </div>
+                    <h2>Check your email</h2>
+                    <p>We've sent a magic login link to <br /><strong className="highlight-text">{email}</strong></p>
+                    <button
+                        className="btn-text-start-over"
+                        onClick={() => setMagicLinkSent(false)}
+                    >
+                        Use a different email
+                    </button>
+                    <button
+                        className="btn-text-link mt-4"
+                        onClick={() => { setMagicLinkSent(false); setMode('signin'); }}
+                    >
+                        Back to Login
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="auth-container">
@@ -77,40 +125,60 @@ export const AuthPage: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="input-group-auth">
-                        <label>Password</label>
-                        <div className="input-wrapper-auth">
-                            <KeyRound size={18} className="input-icon" />
-                            <input
-                                type="password"
-                                placeholder="••••••••"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                disabled={loading}
-                                required
-                            />
+                    {mode !== 'magiclink' && (
+                        <div className="input-group-auth">
+                            <label>Password</label>
+                            <div className="input-wrapper-auth">
+                                <KeyRound size={18} className="input-icon" />
+                                <input
+                                    type="password"
+                                    placeholder="••••••••"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    disabled={loading}
+                                    required
+                                />
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     <button type="submit" disabled={loading} className="btn-auth-submit">
                         {loading
-                            ? (mode === 'signin' ? 'Signing in...' : 'Creating account...')
-                            : (mode === 'signin' ? 'Sign In' : 'Create Account')
+                            ? 'Processing...'
+                            : (mode === 'signup' ? 'Create Account' : mode === 'magiclink' ? 'Send Magic Link' : 'Sign In')
                         }
                         {!loading && <ArrowRight size={18} />}
                     </button>
 
                     <div className="auth-mode-toggle">
-                        <p>
-                            {mode === 'signin' ? "Don't have an account?" : "Already have an account?"}
-                            <button
-                                type="button"
-                                className="btn-text-link"
-                                onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
-                            >
-                                {mode === 'signin' ? 'Sign Up' : 'Sign In'}
+                        {mode === 'signin' && (
+                            <>
+                                <button type="button" className="btn-text-link mb-2" onClick={() => setMode('magiclink')}>
+                                    Forgot password? / Use Magic Link
+                                </button>
+                                <p>
+                                    Don't have an account?
+                                    <button type="button" className="btn-text-link" onClick={() => setMode('signup')}>
+                                        Sign Up
+                                    </button>
+                                </p>
+                            </>
+                        )}
+
+                        {mode === 'signup' && (
+                            <p>
+                                Already have an account?
+                                <button type="button" className="btn-text-link" onClick={() => setMode('signin')}>
+                                    Sign In
+                                </button>
+                            </p>
+                        )}
+
+                        {mode === 'magiclink' && (
+                            <button type="button" className="btn-text-link" onClick={() => setMode('signin')}>
+                                Back to Password Login
                             </button>
-                        </p>
+                        )}
                     </div>
                 </form>
 
