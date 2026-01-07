@@ -7,8 +7,9 @@ import { ShoppingCart, Utensils, Home, Car, Heart, Zap, Gift, Briefcase, PlusCir
 import type { Transaction } from '../lib/db';
 
 interface TransactionHistoryProps {
-    onManageCategories: () => void;
-    onEditTransaction: (transaction: Transaction) => void;
+    onManageCategories?: () => void;
+    onEditTransaction?: (transaction: Transaction) => void;
+    limit?: number;
 }
 
 const iconMap: Record<string, React.ElementType> = {
@@ -24,7 +25,7 @@ const iconMap: Record<string, React.ElementType> = {
     'ArrowRightLeft': ArrowRightLeft,
 };
 
-export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ onManageCategories, onEditTransaction }) => {
+export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ onManageCategories, onEditTransaction, limit }) => {
     const { transactions, fetchTransactions, deleteTransaction, loading } = useTransactionStore();
     const { accounts } = useAccountStore();
     const { categories } = useCategoryStore();
@@ -53,7 +54,11 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ onManage
         groupedTransactions[dateKey].push(t);
     });
 
-    const sortedDates = Object.keys(groupedTransactions).sort((a, b) => b.localeCompare(a));
+    let sortedDates = Object.keys(groupedTransactions).sort((a, b) => b.localeCompare(a));
+
+    if (limit) {
+        sortedDates = sortedDates.slice(0, limit);
+    }
 
     const getDateLabel = (dateStr: string) => {
         const date = new Date(dateStr);
@@ -64,25 +69,29 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ onManage
 
     return (
         <div className="transaction-history">
-            <div className="history-header">
-                <div className="search-bar">
-                    <Search size={18} />
-                    <input
-                        type="text"
-                        placeholder="Search records..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+            {!limit && (
+                <div className="history-header">
+                    <div className="search-bar">
+                        <Search size={18} />
+                        <input
+                            type="text"
+                            placeholder="Search records..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                    {onManageCategories && (
+                        <button className="btn-filter" onClick={onManageCategories}>
+                            <Tag size={18} />
+                            <span>Categories</span>
+                        </button>
+                    )}
+                    <button className="btn-filter">
+                        <Filter size={18} />
+                        <span>Filter</span>
+                    </button>
                 </div>
-                <button className="btn-filter" onClick={onManageCategories}>
-                    <Tag size={18} />
-                    <span>Categories</span>
-                </button>
-                <button className="btn-filter">
-                    <Filter size={18} />
-                    <span>Filter</span>
-                </button>
-            </div>
+            )}
 
             {loading ? (
                 <div className="loading">Loading transactions...</div>
@@ -123,17 +132,21 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ onManage
                                                     {t.note && <span className="transaction-note">• {t.note}</span>}
                                                 </div>
                                             </div>
-                                            <div className="transaction-actions">
-                                                <button className="btn-icon-sm" onClick={() => onEditTransaction(t)}>
-                                                    <Edit2 size={14} />
-                                                </button>
-                                                <button
-                                                    className="btn-icon-sm delete"
-                                                    onClick={() => t.id && confirm('Delete this transaction?') && deleteTransaction(t.id)}
-                                                >
-                                                    <Trash2 size={14} />
-                                                </button>
-                                            </div>
+                                            {!limit && (
+                                                <div className="transaction-actions">
+                                                    {onEditTransaction && (
+                                                        <button className="btn-icon-sm" onClick={() => onEditTransaction(t)}>
+                                                            <Edit2 size={14} />
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        className="btn-icon-sm delete"
+                                                        onClick={() => t.id && confirm('Delete this transaction?') && deleteTransaction(t.id)}
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     );
                                 })}

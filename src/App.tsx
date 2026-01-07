@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Wallet, LogOut, LayoutDashboard, Calculator, ArrowRightLeft, Target, Calendar } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 import { MainDashboard } from './components/MainDashboard';
@@ -17,7 +17,7 @@ import { useCategoryStore } from './stores/categoryStore';
 import { useTransactionStore } from './stores/transactionStore';
 import { useGoalStore } from './stores/goalStore';
 import { supabase } from './lib/supabase';
-import { Session } from '@supabase/supabase-js';
+import type { Session } from '@supabase/supabase-js';
 
 function App() {
   const [session, setSession] = useState<Session | null>(null);

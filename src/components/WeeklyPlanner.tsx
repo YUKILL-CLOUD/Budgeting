@@ -1,28 +1,17 @@
 import React from 'react';
 import { CalendarClock, ShoppingBag } from 'lucide-react';
-import type { Expense } from '../types';
+import { useGoalStore } from '../stores/goalStore';
 
-interface WeeklyPlannerProps {
-    expenses: Expense[];
-}
+export const WeeklyPlanner: React.FC = () => {
+    const { goals } = useGoalStore();
 
-export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({ expenses }) => {
-    const flexibleExpenses = expenses.filter(exp => exp.isFlexible);
+    // In the new system, we treat Goals with a 'monthlyPlan' as items to fund.
+    // This includes both Bills (Fixed) and Savings/Flexible Spending (if planned).
+    // Let's filter for anything with a positive monthly plan.
+    const plannedItems = goals.filter(g => (g.monthlyPlan || 0) > 0);
 
-    // Calculate total weekly allowance for flexible items
-    const totalWeeklyAllowance = flexibleExpenses.reduce((acc, exp) => {
-        // If it's already weekly, use it as is.
-        // If it's monthly, divide by 4.33
-        // If it's annual, divide by 12 then 4.33
-        let weeklyAmount = 0;
-        if (exp.frequency === 'Weekly') {
-            weeklyAmount = exp.amount;
-        } else if (exp.frequency === 'Monthly') {
-            weeklyAmount = exp.amount / 4.33;
-        } else {
-            weeklyAmount = (exp.amount / 12) / 4.33;
-        }
-        return acc + weeklyAmount;
+    const totalWeeklyAllowance = plannedItems.reduce((acc, item) => {
+        return acc + (item.monthlyPlan / 4.33);
     }, 0);
 
     return (
@@ -31,37 +20,30 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({ expenses }) => {
                 <CalendarClock size={24} />
                 <div>
                     <h2>Spending Allowances</h2>
-                    <p className="subtitle-white">Planned limits for daily costs</p>
+                    <p className="subtitle-white">Weekly breakdown of your monthly blueprints</p>
                 </div>
                 <div className="total-allowance">
-                    <span className="allowance-label">Total Weekly Limit</span>
+                    <span className="allowance-label">Total Weekly Need</span>
                     <span className="allowance-value">₱ {totalWeeklyAllowance.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                 </div>
             </div>
 
             <div className="planner-list">
-                {flexibleExpenses.length === 0 ? (
-                    <p className="empty-planner">No flexible expenses marked yet.</p>
+                {plannedItems.length === 0 ? (
+                    <p className="empty-planner">No monthly plans set in your Goals.</p>
                 ) : (
-                    flexibleExpenses.map(exp => {
-                        let weeklyAmount = 0;
-                        if (exp.frequency === 'Weekly') {
-                            weeklyAmount = exp.amount;
-                        } else if (exp.frequency === 'Monthly') {
-                            weeklyAmount = exp.amount / 4.33;
-                        } else {
-                            weeklyAmount = (exp.amount / 12) / 4.33;
-                        }
+                    plannedItems.map(item => {
+                        const weeklyAmount = item.monthlyPlan / 4.33;
 
                         return (
-                            <div key={exp.id} className="planner-item">
+                            <div key={item.id} className="planner-item">
                                 <div className="planner-icon">
                                     <ShoppingBag size={18} />
                                 </div>
                                 <div className="planner-details">
-                                    <span className="planner-name">{exp.name}</span>
+                                    <span className="planner-name">{item.name}</span>
                                     <span className="planner-calc">
-                                        {exp.frequency === 'Monthly' ? `(₱${exp.amount} / 4.33)` : 'Weekly Average'}
+                                        (₱{item.monthlyPlan} / 4.33)
                                     </span>
                                 </div>
                                 <div className="planner-amount">

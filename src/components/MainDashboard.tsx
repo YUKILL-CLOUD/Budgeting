@@ -9,13 +9,11 @@ import { useCategoryStore } from '../stores/categoryStore';
 import { useGoalStore } from '../stores/goalStore';
 import { format, subDays, eachDayOfInterval, isSameDay, startOfMonth } from 'date-fns';
 import { DollarSign, Activity, PieChart as PieIcon, ArrowUpRight, ArrowDownRight, Target, Flame, Trophy, Link2 } from 'lucide-react';
-import type { Expense } from '../types';
 
-interface MainDashboardProps {
-    expenses: Expense[];
-}
 
-export const MainDashboard: React.FC<MainDashboardProps> = ({ expenses }) => {
+interface MainDashboardProps { }
+
+export const MainDashboard: React.FC<MainDashboardProps> = () => {
     const { transactions } = useTransactionStore();
     const { accounts } = useAccountStore();
     const { categories } = useCategoryStore();
@@ -44,34 +42,12 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({ expenses }) => {
 
     // 2. Budget Progress Stats
     const totalMonthlyPlanned = useMemo(() => {
-        return expenses.reduce((acc, exp) => {
-            let monthlyAmount = 0;
-            if (exp.frequency === 'Weekly') {
-                monthlyAmount = exp.amount * 4.33;
-            } else if (exp.frequency === 'Monthly') {
-                monthlyAmount = exp.amount;
-            } else {
-                monthlyAmount = exp.amount / 12;
-            }
-            return acc + monthlyAmount;
-        }, 0);
-    }, [expenses]);
+        return goals.reduce((sum, g) => sum + (g.monthlyPlan || 0), 0);
+    }, [goals]);
 
-    const totalWeeklyAllowance = useMemo(() => {
-        return expenses
-            .filter(exp => exp.isFlexible)
-            .reduce((acc, exp) => {
-                let weeklyAmount = 0;
-                if (exp.frequency === 'Weekly') {
-                    weeklyAmount = exp.amount;
-                } else if (exp.frequency === 'Monthly') {
-                    weeklyAmount = exp.amount / 4.33;
-                } else {
-                    weeklyAmount = (exp.amount / 12) / 4.33;
-                }
-                return acc + weeklyAmount;
-            }, 0);
-    }, [expenses]);
+    // Estimate allowance as what's left after bills, or just 50% of income for now as a fallback if no plan.
+    // Ideally this comes from a 'Settings' store.
+    const totalWeeklyAllowance = totalBalance > 0 ? (totalBalance * 0.1) : 2000; // Placeholder until we persist 'Pocket Money' settings
 
     const weeklySpent = useMemo(() => {
         const sevenDaysAgo = subDays(new Date(), 7);

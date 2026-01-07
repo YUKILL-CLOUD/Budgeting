@@ -1,59 +1,67 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { TrendingUp, TrendingDown, Target, Wallet } from 'lucide-react';
-import type { Income, Expense } from '../types';
+import { useTransactionStore } from '../stores/transactionStore';
+import { useGoalStore } from '../stores/goalStore';
+import { startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 
-interface BudgetSummaryProps {
-    incomes: Income[];
-    expenses: Expense[];
-    savings: number;
-}
+export const BudgetSummary: React.FC = () => {
+    const { transactions } = useTransactionStore();
+    const { goals } = useGoalStore();
 
-export const BudgetSummary: React.FC<BudgetSummaryProps> = ({ incomes, expenses, savings }) => {
-    // Calculations
-    const totalMonthlyIncome = incomes.reduce((acc, inc) => acc + (inc.weeklyAmount * 4.33), 0);
+    // Calculate metrics
+    const { totalIncome, totalPlannedExpenses, totalSavings } = useMemo(() => {
+        const now = new Date();
+        const monthStart = startOfMonth(now);
+        const monthEnd = endOfMonth(now);
 
-    const totalMonthlyExpenses = expenses.reduce((acc, exp) => {
-        let monthlyAmount = exp.amount;
-        if (exp.frequency === 'Weekly') {
-            monthlyAmount = exp.amount * 4.33;
-        } else if (exp.frequency === 'Annual') {
-            monthlyAmount = exp.amount / 12;
-        }
-        return acc + monthlyAmount;
-    }, 0);
+        // Actual Income for the current month
+        const income = transactions
+            .filter(t => t.type === 'income' && isWithinInterval(new Date(t.date), { start: monthStart, end: monthEnd }))
+            .reduce((sum, t) => sum + t.amount, 0);
 
-    const remainingBalance = totalMonthlyIncome - totalMonthlyExpenses - savings;
-    const isZeroBased = Math.abs(remainingBalance) < 1; // Tolerance for float math
+        // Planned Expenses (Based on Goal/Bill Blueprints - monthlyPlan)
+        // We assume bills/obligations have a 'monthlyPlan' set.
+        const expenses = goals.reduce((sum, g) => sum + (g.monthlyPlan || 0), 0);
+
+        // Savings Targets (Total Target of non-monthly-refresh goals)
+        const savingsGoals = goals.filter(g => g.refreshType !== 'monthly');
+        const savings = savingsGoals.reduce((sum, g) => sum + (g.targetAmount || 0), 0);
+
+        return { totalIncome: income, totalPlannedExpenses: expenses, totalSavings: savings };
+    }, [transactions, goals]);
+
+    const remainingBalance = totalIncome - totalPlannedExpenses;
+    const isZeroBased = Math.abs(remainingBalance) < 1;
 
     return (
         <div className="card summary-card">
             <div className="card-header centered">
                 <h2>Financial Blueprint</h2>
-                <p className="subtitle">Projection system for the month</p>
+                <p className="subtitle">Current Month Overview</p>
             </div>
 
             <div className="summary-grid">
                 <div className="summary-item income">
                     <div className="icon-badge income-bg"><TrendingUp size={20} /></div>
                     <div className="summary-details">
-                        <span className="label">Projected Income</span>
-                        <span className="value">₱ {totalMonthlyIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span className="label">Actual Income</span>
+                        <span className="value">₱ {totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                 </div>
 
                 <div className="summary-item expense">
                     <div className="icon-badge expense-bg"><TrendingDown size={20} /></div>
                     <div className="summary-details">
-                        <span className="label">Planned Costs</span>
-                        <span className="value">₱ {totalMonthlyExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span className="label">Planned Expenses</span>
+                        <span className="value">₱ {totalPlannedExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                 </div>
 
                 <div className="summary-item savings">
                     <div className="icon-badge savings-bg"><Target size={20} /></div>
                     <div className="summary-details">
-                        <span className="label">Total Savings</span>
-                        <span className="value">₱ {savings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span className="label">Savings Targets</span>
+                        <span className="value">₱ {totalSavings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                 </div>
             </div>
@@ -61,17 +69,17 @@ export const BudgetSummary: React.FC<BudgetSummaryProps> = ({ incomes, expenses,
             <div className={`balance-section ${isZeroBased ? 'balanced' : remainingBalance > 0 ? 'surplus' : 'deficit'}`}>
                 <div className="balance-header">
                     <Wallet size={24} />
-                    <h3>Monthly Surplus / Deficit</h3>
+                    <h3>Net Flow</h3>
                 </div>
                 <div className="balance-amount">
                     ₱ {remainingBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
                 <div className="balance-status">
                     {isZeroBased
-                        ? "Perfect! You have a Zero-Based Budget."
+                        ? "Perfectly balanced."
                         : remainingBalance > 0
-                            ? "You have money left over. Assign it to savings or expenses."
-                            : "You are over budget. Adjust your expenses."}
+                            ? "Surplus available for savings or goals."
+                            : "Deficit based on Planned Expenses."}
                 </div>
             </div>
         </div>

@@ -1,25 +1,36 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
-import type { Expense } from '../types';
+import { useTransactionStore } from '../stores/transactionStore';
+import { useCategoryStore } from '../stores/categoryStore';
+import { startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 
-interface BudgetChartProps {
-    expenses: Expense[];
-}
+export const BudgetChart: React.FC = () => {
+    const { transactions } = useTransactionStore();
+    const { categories } = useCategoryStore();
 
-export const BudgetChart: React.FC<BudgetChartProps> = ({ expenses }) => {
-    // Process data for the chart
-    const data = expenses.map(exp => {
-        let monthlyAmount = exp.amount;
-        if (exp.frequency === 'Weekly') {
-            monthlyAmount = exp.amount * 4.33;
-        } else if (exp.frequency === 'Annual') {
-            monthlyAmount = exp.amount / 12;
-        }
-        return {
-            name: exp.name,
-            value: Math.round(monthlyAmount)
-        };
-    }).filter(d => d.value > 0);
+    // Process data for the chart: Real Spending
+    const data = useMemo(() => {
+        const now = new Date();
+        const monthStart = startOfMonth(now);
+        const monthEnd = endOfMonth(now);
+
+        const expenses = transactions.filter(t =>
+            t.type === 'expense' &&
+            isWithinInterval(new Date(t.date), { start: monthStart, end: monthEnd })
+        );
+
+        // Group by Category
+        const group: Record<string, number> = {};
+        expenses.forEach(t => {
+            const catName = categories.find(c => c.id === t.categoryId)?.name || 'Uncategorized';
+            group[catName] = (group[catName] || 0) + t.amount;
+        });
+
+        return Object.entries(group)
+            .map(([name, value]) => ({ name, value }))
+            .filter(d => d.value > 0);
+
+    }, [transactions, categories]);
 
     const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
 
@@ -39,31 +50,37 @@ export const BudgetChart: React.FC<BudgetChartProps> = ({ expenses }) => {
         <div className="card chart-card">
             <div className="card-header">
                 <h2>Expense Allocation</h2>
-                <p className="subtitle">Breakdown of planned monthly spending</p>
+                <p className="subtitle">Actual spending this month</p>
             </div>
-            <div style={{ width: '100%', height: 300 }}>
-                <ResponsiveContainer>
-                    <PieChart>
-                        <Pie
-                            data={data}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={60}
-                            outerRadius={80}
-                            paddingAngle={5}
-                            dataKey="value"
-                            animationBegin={0}
-                            animationDuration={1500}
-                        >
-                            {data.map((_, index) => (
-                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                        </Pie>
-                        <Tooltip content={<CustomTooltip />} />
-                        <Legend verticalAlign="bottom" height={36} />
-                    </PieChart>
-                </ResponsiveContainer>
-            </div>
+            {data.length > 0 ? (
+                <div style={{ width: '100%', height: 300 }}>
+                    <ResponsiveContainer>
+                        <PieChart>
+                            <Pie
+                                data={data}
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={60}
+                                outerRadius={80}
+                                paddingAngle={5}
+                                dataKey="value"
+                                animationBegin={0}
+                                animationDuration={1500}
+                            >
+                                {data.map((_, index) => (
+                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                ))}
+                            </Pie>
+                            <Tooltip content={<CustomTooltip />} />
+                            <Legend verticalAlign="bottom" height={36} />
+                        </PieChart>
+                    </ResponsiveContainer>
+                </div>
+            ) : (
+                <div className="empty-chart-state" style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
+                    No expense data for this month
+                </div>
+            )}
         </div>
     );
 };

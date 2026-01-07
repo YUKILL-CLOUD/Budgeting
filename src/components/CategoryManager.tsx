@@ -5,9 +5,10 @@ import { toast } from 'sonner';
 
 interface CategoryManagerProps {
     onClose: () => void;
+    isOpen: boolean;
 }
 
-export const CategoryManager: React.FC<CategoryManagerProps> = ({ onClose }) => {
+export const CategoryManager: React.FC<CategoryManagerProps> = ({ onClose, isOpen }) => {
     const { categories, addCategory, updateCategory, deleteCategory } = useCategoryStore();
     const [activeTab, setActiveTab] = useState<'expense' | 'income'>('expense');
     const [isAdding, setIsAdding] = useState(false);
@@ -17,6 +18,8 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({ onClose }) => 
     const [name, setName] = useState('');
     const [color, setColor] = useState('#6366f1');
     const [icon, setIcon] = useState('Tag');
+
+    if (!isOpen) return null;
 
     const filteredCategories = categories.filter(c => c.type === activeTab);
 

@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { PiggyBank, Wallet, Receipt, CheckCircle2 } from 'lucide-react';
+import { PiggyBank, Wallet, Receipt, CheckCircle2, X } from 'lucide-react';
 import { useGoalStore } from '../stores/goalStore';
 
 interface PaycheckAllocatorProps {
-    expenses?: any[];
+    isOpen?: boolean;
+    onClose?: () => void;
 }
 
-export const PaycheckAllocator: React.FC<PaycheckAllocatorProps> = () => {
+export const PaycheckAllocator: React.FC<PaycheckAllocatorProps> = ({ isOpen, onClose }) => {
     const { goals } = useGoalStore();
     const [actualIncome, setActualIncome] = useState<number>(0);
     const [spendingAllowance, setSpendingAllowance] = useState<number>(2000); // Default allowance
@@ -49,8 +50,6 @@ export const PaycheckAllocator: React.FC<PaycheckAllocatorProps> = () => {
     unifiedItems.forEach(i => suggestions[i.id] = 0);
 
     // --- PASS 1: SURVIVAL WATERFALL (High Priority Only) ---
-    // Only High Priority items get their weekly necessity first.
-    // We skip Waterfall for Med/Low to ensure they don't eat the pool during the survival phase.
     unifiedItems.filter(item => item.priority === 'high').forEach(item => {
         if (pool > 0 && item.weeklyMin > 0) {
             const amountToGive = Math.min(pool, item.weeklyMin);
@@ -60,8 +59,6 @@ export const PaycheckAllocator: React.FC<PaycheckAllocatorProps> = () => {
     });
 
     // --- PASS 2: BALANCED GROWTH SPLIT (All Priorities) ---
-    // Every remaining peso is split EQUALLY between everything that isn't focused yet.
-    // This allows Savings and Loans to grow together 50/50.
     let activeGoals = unifiedItems.filter(item => (item.monthlyTarget - (suggestions[item.id] || 0)) > 0.5);
 
     while (pool > 0.5 && activeGoals.length > 0) {
@@ -77,10 +74,8 @@ export const PaycheckAllocator: React.FC<PaycheckAllocatorProps> = () => {
         });
 
         pool -= poolConsumedThisRound;
-        // Re-calculate which goals still need funding
         activeGoals = activeGoals.filter(item => (item.monthlyTarget - (suggestions[item.id] || 0)) > 0.5);
 
-        // Safety break if we aren't moving anymore
         if (poolConsumedThisRound < 0.1) break;
     }
 
@@ -92,15 +87,26 @@ export const PaycheckAllocator: React.FC<PaycheckAllocatorProps> = () => {
     const fixedObligations = unifiedItems.filter(i => i.type === 'fixed');
     const savingsTargets = unifiedItems.filter(i => i.type === 'saving');
 
-    return (
-        <div className="card allocator-card">
-            <div className="card-header highlight-header-blue">
-                <Wallet size={24} />
-                <div>
-                    <h2>Paycheck Worksheet</h2>
-                    <p className="subtitle-white">Blueprint-driven allocation for this week's income</p>
+    const content = (
+        <div className={`allocator-card ${!isOpen ? 'card' : ''}`}>
+            {!isOpen && (
+                <div className="card-header highlight-header-blue">
+                    <Wallet size={24} />
+                    <div>
+                        <h2>Paycheck Worksheet</h2>
+                        <p className="subtitle-white">Blueprint-driven allocation for this week's income</p>
+                    </div>
                 </div>
-            </div>
+            )}
+
+            {isOpen && (
+                <div className="modal-header">
+                    <h2>Paycheck Worksheet</h2>
+                    <button onClick={onClose} className="btn-icon">
+                        <X size={24} />
+                    </button>
+                </div>
+            )}
 
             <div className="allocator-input-section waterfall-inputs">
                 <div className="input-row-main">
@@ -134,7 +140,7 @@ export const PaycheckAllocator: React.FC<PaycheckAllocatorProps> = () => {
                 </div>
             </div>
 
-            <div className="bank-allocation-grid multi-card-layout">
+            <div className={`bank-allocation-grid ${isOpen ? 'modal-grid' : 'multi-card-layout'}`}>
                 {/* 💳 Card 1: Bills & Loans */}
                 <div className="bank-card bills-card">
                     <div className="bank-header">
@@ -213,16 +219,28 @@ export const PaycheckAllocator: React.FC<PaycheckAllocatorProps> = () => {
                         {unifiedItems.filter(i => suggestions[i.id] > 0.5).map(item => (
                             <div key={`check-${item.id}`} className="check-item">
                                 <CheckCircle2 size={14} className="check-icon" />
-                                <span>Move ₱{Math.round(suggestions[item.id]).toLocaleString()} to <strong>{item.name}</strong></span>
+                                <span style={{ fontSize: '0.8rem' }}>Move ₱{Math.round(suggestions[item.id]).toLocaleString()} to <strong>{item.name}</strong></span>
                             </div>
                         ))}
                         <div className="check-item highlight">
                             <CheckCircle2 size={14} className="check-icon" />
-                            <span>Keep ₱{Math.round(totalPocketMoney).toLocaleString()} for <strong>Daily Spending</strong></span>
+                            <span style={{ fontSize: '0.8rem' }}>Keep ₱{Math.round(totalPocketMoney).toLocaleString()} for <strong>Daily Spending</strong></span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     );
+
+    if (isOpen) {
+        return (
+            <div className="modal-overlay">
+                <div className="modal-content large">
+                    {content}
+                </div>
+            </div>
+        );
+    }
+
+    return content;
 };
