@@ -28,7 +28,10 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Check URL for password reset route
-  const isPasswordReset = window.location.pathname === '/update-password';
+  // Supabase sends recovery tokens in the hash fragment (e.g., #access_token=...&type=recovery)
+  const isPasswordReset =
+    window.location.pathname === '/update-password' ||
+    window.location.hash.includes('type=recovery');
 
   const { fetchAccounts, accounts } = useAccountStore();
   const { fetchCategories } = useCategoryStore();
