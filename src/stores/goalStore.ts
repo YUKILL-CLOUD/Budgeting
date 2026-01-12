@@ -63,7 +63,7 @@ export const useGoalStore = create<GoalStore>((set, get) => ({
         if (!user) return;
 
         // Map camelCase to snake_case for DB
-        const dbGoal = {
+        const dbGoal: any = {
             user_id: user.id,
             name: goal.name,
             target_amount: goal.targetAmount,
@@ -75,8 +75,14 @@ export const useGoalStore = create<GoalStore>((set, get) => ({
             priority: goal.priority,
             deadline: goal.deadline,
             status: goal.status,
-            last_refreshed_at: new Date(),
         };
+
+        // Only add last_refreshed_at if it's defined in the schema to avoid PGRST204
+        if (goal.lastRefreshedAt) {
+            dbGoal.last_refreshed_at = goal.lastRefreshedAt;
+        } else if (goal.refreshType === 'monthly') {
+            dbGoal.last_refreshed_at = new Date();
+        }
 
         const { error } = await supabase
             .from('goals')

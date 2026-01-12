@@ -17,7 +17,8 @@ export const BudgetForm: React.FC = () => {
     const [trackingType, setTrackingType] = useState<'auto' | 'manual'>('manual');
     const [refreshType, setRefreshType] = useState<'none' | 'monthly'>('none');
     const [priority, setPriority] = useState<'high' | 'medium' | 'low'>('medium');
-
+    const [currentAmount, setCurrentAmount] = useState('');
+    const [deadline, setDeadline] = useState(new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]);
     // Bill Form Specifics (UI helpers to convert to Goal)
     const [billFreq, setBillFreq] = useState<'Weekly' | 'Monthly'>('Monthly');
 
@@ -38,6 +39,8 @@ export const BudgetForm: React.FC = () => {
         setTrackingType('manual');
         setRefreshType('none');
         setPriority('medium');
+        setCurrentAmount('');
+        setDeadline(new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]);
         setBillFreq('Monthly');
     };
 
@@ -59,9 +62,9 @@ export const BudgetForm: React.FC = () => {
             trackingType,
             refreshType,
             priority,
-            currentAmount: editingGoalId ? undefined : 0, // Don't reset current if editing
+            currentAmount: editingGoalId ? undefined : (parseFloat(currentAmount) || 0),
             status: 'active' as const,
-            deadline: new Date(new Date().setFullYear(new Date().getFullYear() + 1)) // Default 1 year
+            deadline: new Date(deadline)
         };
 
         try {
@@ -70,7 +73,10 @@ export const BudgetForm: React.FC = () => {
                 await updateGoal(editingGoalId, payload);
                 toast.success('Updated successfully');
             } else {
-                await addGoal({ ...payload, currentAmount: 0 });
+                await addGoal({
+                    ...payload,
+                    currentAmount: parseFloat(currentAmount) || 0
+                });
                 toast.success('Added successfully');
             }
             resetForm();
@@ -88,6 +94,10 @@ export const BudgetForm: React.FC = () => {
         setTrackingType(goal.trackingType);
         setRefreshType(goal.refreshType);
         setPriority(goal.priority);
+        setCurrentAmount(goal.currentAmount?.toString() || '0');
+        if (goal.deadline) {
+            setDeadline(new Date(goal.deadline).toISOString().split('T')[0]);
+        }
     };
 
     return (
@@ -144,6 +154,28 @@ export const BudgetForm: React.FC = () => {
                                 <select value={accountId} onChange={e => setAccountId(e.target.value)} className="styled-select-gold">
                                     <option value="">None</option>
                                     {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="form-row">
+                            <div className="form-group">
+                                <label className="field-label">Starting Balance</label>
+                                <div className="input-wrapper">
+                                    <span className="currency-prefix">₱</span>
+                                    <input type="number" value={currentAmount} onChange={e => setCurrentAmount(e.target.value)} placeholder="0.00" />
+                                </div>
+                            </div>
+                            <div className="form-group">
+                                <label className="field-label">Target Date</label>
+                                <input type="date" value={deadline} onChange={e => setDeadline(e.target.value)} className="styled-input-dark" />
+                            </div>
+                            <div className="form-group">
+                                <label className="field-label">Priority</label>
+                                <select value={priority} onChange={e => setPriority(e.target.value as any)} className="styled-select-gold">
+                                    <option value="high">High</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="low">Low</option>
                                 </select>
                             </div>
                         </div>
