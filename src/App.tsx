@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Wallet, LogOut, LayoutDashboard, Calculator, ArrowRightLeft, Target, Calendar } from 'lucide-react';
+import { Wallet, LogOut, LayoutDashboard, Calculator, ArrowRightLeft, Target, Calendar, Plus, Trophy } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 import { MainDashboard } from './components/MainDashboard';
 import { BudgetSummary } from './components/BudgetSummary';
@@ -12,6 +12,7 @@ import { AccountDashboard } from './components/AccountDashboard';
 import { WeeklyPlanner } from './components/WeeklyPlanner';
 import { AuthPage } from './components/AuthPage';
 import { UpdatePassword } from './components/UpdatePassword';
+import { TransactionModal } from './components/TransactionModal';
 import { useAccountStore } from './stores/accountStore';
 import { useCategoryStore } from './stores/categoryStore';
 import { useTransactionStore } from './stores/transactionStore';
@@ -23,9 +24,8 @@ function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [isPaycheckModalOpen, setIsPaycheckModalOpen] = useState(false);
+  const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
   const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Check URL for password reset route
   // Supabase sends recovery tokens in the hash fragment (e.g., #access_token=...&type=recovery)
@@ -135,82 +135,93 @@ function App() {
       <Toaster position="top-center" richColors theme="system" />
 
       <header className="app-header">
-        <div className="header-content">
-          <div className="logo-box">
-            <Wallet className="w-8 h-8 text-white" />
+        <div className="header-inner">
+          <div className="logo-section">
+            <div className="logo-icon-box">
+              <Wallet className="w-6 h-6 text-indigo-400" />
+            </div>
+            <div className="logo-text">
+              <h1 className="brand-name">ZeroBudget</h1>
+              <p className="balance-badge">₱ {totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl font-bold">ZeroBudget</h1>
-            <p className="text-xs text-blue-100 opacity-90">Total Balance: ${totalBalance.toFixed(2)}</p>
-          </div>
+          <button onClick={handleSignOut} className="btn-logout" title="Sign Out">
+            <LogOut size={18} />
+          </button>
         </div>
-        <button className="btn-icon mobile-menu-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
-          <LayoutDashboard size={24} />
-        </button>
-        <button onClick={handleSignOut} className="btn-logout-header" title="Sign Out">
-          <LogOut size={18} />
-        </button>
+
+        <nav className="horizontal-navbar">
+          <div className="nav-links">
+            <button
+              className={`nav-link ${activeTab === 'dashboard' ? 'active' : ''}`}
+              onClick={() => setActiveTab('dashboard')}
+            >
+              <LayoutDashboard size={18} /> <span>Dashboard</span>
+            </button>
+            <button
+              className={`nav-link ${activeTab === 'accounts' ? 'active' : ''}`}
+              onClick={() => setActiveTab('accounts')}
+            >
+              <Wallet size={18} /> <span>Accounts</span>
+            </button>
+            <button
+              className={`nav-link ${activeTab === 'budget' ? 'active' : ''}`}
+              onClick={() => setActiveTab('budget')}
+            >
+              <Trophy size={18} /> <span>Goals</span>
+            </button>
+            <button
+              className={`nav-link ${activeTab === 'allocator' ? 'active' : ''}`}
+              onClick={() => setActiveTab('allocator')}
+            >
+              <Calculator size={18} /> <span>Allocator</span>
+            </button>
+            <button
+              className={`nav-link ${activeTab === 'planner' ? 'active' : ''}`}
+              onClick={() => setActiveTab('planner')}
+            >
+              <Calendar size={18} /> <span>Planner</span>
+            </button>
+            <button
+              className={`nav-link ${activeTab === 'reports' ? 'active' : ''}`}
+              onClick={() => setActiveTab('reports')}
+            >
+              <Target size={18} /> <span>Reports</span>
+            </button>
+          </div>
+          <div className="nav-actions">
+            <button className="nav-btn-settings" onClick={() => setIsCategoryManagerOpen(true)}>
+              <Target size={18} /> <span>Categories</span>
+            </button>
+          </div>
+        </nav>
       </header>
 
-      <div className="main-layout">
-        <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
-          <nav className="nav-menu">
-            <button
-              className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-              onClick={() => { setActiveTab('dashboard'); setSidebarOpen(false); }}
-            >
-              <LayoutDashboard size={20} /> Dashboard
-            </button>
-            <button
-              className={`nav-item ${activeTab === 'accounts' ? 'active' : ''}`}
-              onClick={() => { setActiveTab('accounts'); setSidebarOpen(false); }}
-            >
-              <Wallet size={20} /> Accounts
-            </button>
-            <button
-              className={`nav-item ${activeTab === 'allocator' ? 'active' : ''}`}
-              onClick={() => { setActiveTab('allocator'); setSidebarOpen(false); }}
-            >
-              <Calculator size={20} /> Paycheck Allocator
-            </button>
-            <button
-              className={`nav-item ${activeTab === 'planner' ? 'active' : ''}`}
-              onClick={() => { setActiveTab('planner'); setSidebarOpen(false); }}
-            >
-              <Calendar size={20} /> Weekly Planner
-            </button>
-            <button
-              className={`nav-item ${activeTab === 'reports' ? 'active' : ''}`}
-              onClick={() => { setActiveTab('reports'); setSidebarOpen(false); }}
-            >
-              <Target size={20} /> Reports & History
-            </button>
-
-            <div className="nav-divider"></div>
-
-            <button
-              className="nav-item"
-              onClick={() => { setIsCategoryManagerOpen(true); setSidebarOpen(false); }}
-            >
-              <Target size={20} /> Manage Categories
-            </button>
-          </nav>
-        </aside>
-
-        <main className="content-area">
+      <main className="main-content-area">
+        <div className="content-container">
           {renderContent()}
-        </main>
-      </div>
+        </div>
+      </main>
 
-      <PaycheckAllocator
-        isOpen={isPaycheckModalOpen}
-        onClose={() => setIsPaycheckModalOpen(false)}
-      />
+      {/* Floating Action Button */}
+      <button
+        className="fab-button"
+        onClick={() => setIsTransactionModalOpen(true)}
+        title="Add Transaction"
+      >
+        <Plus size={32} />
+      </button>
 
-      <CategoryManager
-        isOpen={isCategoryManagerOpen}
-        onClose={() => setIsCategoryManagerOpen(false)}
-      />
+      {isTransactionModalOpen && (
+        <TransactionModal onClose={() => setIsTransactionModalOpen(false)} />
+      )}
+
+      {isCategoryManagerOpen && (
+        <CategoryManager
+          isOpen={isCategoryManagerOpen}
+          onClose={() => setIsCategoryManagerOpen(false)}
+        />
+      )}
     </div>
   );
 }

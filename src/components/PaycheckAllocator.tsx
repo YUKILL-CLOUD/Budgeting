@@ -88,20 +88,27 @@ export const PaycheckAllocator: React.FC<PaycheckAllocatorProps> = ({ isOpen, on
     const savingsTargets = unifiedItems.filter(i => i.type === 'saving');
 
     const content = (
-        <div className={`allocator-card ${!isOpen ? 'card' : ''}`}>
+        <div className="allocator-container">
             {!isOpen && (
-                <div className="card-header highlight-header-blue">
-                    <Wallet size={24} />
-                    <div>
-                        <h2>Paycheck Worksheet</h2>
-                        <p className="subtitle-white">Blueprint-driven allocation for this week's income</p>
+                <div className="tab-page-header">
+                    <div className="header-with-icon">
+                        <div className="header-icon-pill">
+                            <Receipt size={24} />
+                        </div>
+                        <div>
+                            <h2 className="page-title">Paycheck Worksheet</h2>
+                            <p className="page-subtitle">Blueprint-driven allocation for this week's income</p>
+                        </div>
                     </div>
                 </div>
             )}
 
             {isOpen && (
                 <div className="modal-header">
-                    <h2>Paycheck Worksheet</h2>
+                    <div className="header-with-icon">
+                        <Wallet size={24} />
+                        <h2>Paycheck Worksheet</h2>
+                    </div>
                     <button onClick={onClose} className="btn-icon">
                         <X size={24} />
                     </button>
