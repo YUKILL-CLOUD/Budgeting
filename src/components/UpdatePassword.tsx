@@ -8,13 +8,20 @@ export const UpdatePassword: React.FC = () => {
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        // Ensure we have a session (handled by the recovery link automatically logging them in)
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        const checkSession = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
             if (!session) {
-                toast.error('Invalid or expired recovery link.');
-                window.location.href = '/';
+                // Give it one more try after a tiny delay in case hash parsing is slow
+                setTimeout(async () => {
+                    const { data: { secondSession } } = await supabase.auth.getSession() as any;
+                    if (!secondSession && !window.location.hash.includes('access_token')) {
+                        toast.error('Invalid or expired recovery link.');
+                        window.location.href = '/';
+                    }
+                }, 500);
             }
-        });
+        };
+        checkSession();
     }, []);
 
     const handleUpdate = async (e: React.FormEvent) => {
