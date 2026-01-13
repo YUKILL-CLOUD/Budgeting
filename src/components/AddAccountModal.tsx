@@ -33,6 +33,7 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({ onClose }) => 
     const [type, setType] = useState<'bank' | 'cash' | 'credit' | 'savings'>('bank');
     const [selectedIcon, setSelectedIcon] = useState('Building2');
     const [selectedColor, setSelectedColor] = useState(accountColors[0]);
+    const [isSaving, setIsSaving] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -43,6 +44,7 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({ onClose }) => 
         }
 
         try {
+            setIsSaving(true);
             await addAccount({
                 name: name.trim(),
                 balance: parseFloat(balance) || 0,
@@ -55,6 +57,8 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({ onClose }) => 
         } catch (error) {
             toast.error('Failed to create account');
             console.error(error);
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -148,8 +152,15 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({ onClose }) => 
                         <button type="button" className="btn-modal-cancel" onClick={onClose}>
                             Cancel
                         </button>
-                        <button type="submit" className="btn-modal-submit">
-                            Create Account
+                        <button type="submit" className={`btn-modal-submit ${isSaving ? 'btn-loading' : ''}`} disabled={isSaving}>
+                            {isSaving ? (
+                                <>
+                                    <div className="spinner" />
+                                    <span>Creating...</span>
+                                </>
+                            ) : (
+                                'Create Account'
+                            )}
                         </button>
                     </div>
                 </form>

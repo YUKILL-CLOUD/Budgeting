@@ -7,6 +7,7 @@ import { useTransactionStore } from '../stores/transactionStore';
 import { useAccountStore } from '../stores/accountStore';
 import { useCategoryStore } from '../stores/categoryStore';
 import { useGoalStore } from '../stores/goalStore';
+import { useObligationStore } from '../stores/obligationStore';
 import { format, subDays, eachDayOfInterval, isSameDay, startOfMonth } from 'date-fns';
 import { DollarSign, Activity, PieChart as PieIcon, ArrowUpRight, ArrowDownRight, Target, Flame, Trophy, Link2, LayoutDashboard } from 'lucide-react';
 
@@ -18,10 +19,12 @@ export const MainDashboard: React.FC<MainDashboardProps> = () => {
     const { accounts } = useAccountStore();
     const { categories } = useCategoryStore();
     const { goals, fetchGoals } = useGoalStore();
+    const { obligations, fetchObligations } = useObligationStore();
 
     useEffect(() => {
         fetchGoals();
-    }, [fetchGoals]);
+        fetchObligations();
+    }, [fetchGoals, fetchObligations]);
 
     // 1. Calculate Summary Stats
     const totalBalance = accounts.reduce((acc, curr) => acc + curr.balance, 0);
@@ -42,8 +45,10 @@ export const MainDashboard: React.FC<MainDashboardProps> = () => {
 
     // 2. Budget Progress Stats
     const totalMonthlyPlanned = useMemo(() => {
-        return goals.reduce((sum, g) => sum + (g.monthlyPlan || 0), 0);
-    }, [goals]);
+        const goalTotal = goals.reduce((sum, g) => sum + (g.monthlyPlan || 0), 0);
+        const obTotal = obligations.reduce((sum, o) => sum + (o.amount || 0), 0);
+        return goalTotal + obTotal;
+    }, [goals, obligations]);
 
     // Estimate allowance as what's left after bills, or just 50% of income for now as a fallback if no plan.
     // Ideally this comes from a 'Settings' store.

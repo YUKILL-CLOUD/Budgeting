@@ -1,17 +1,29 @@
 import React from 'react';
 import { CalendarClock, ShoppingBag } from 'lucide-react';
 import { useGoalStore } from '../stores/goalStore';
+import { useObligationStore } from '../stores/obligationStore';
 
 export const WeeklyPlanner: React.FC = () => {
     const { goals } = useGoalStore();
+    const { obligations } = useObligationStore();
 
-    // In the new system, we treat Goals with a 'monthlyPlan' as items to fund.
-    // This includes both Bills (Fixed) and Savings/Flexible Spending (if planned).
-    // Let's filter for anything with a positive monthly plan.
-    const plannedItems = goals.filter(g => (g.monthlyPlan || 0) > 0);
+    // Combine both Goals and Obligations for the weekly breakdown
+    const plannedGoals = goals.filter(g => (g.monthlyPlan || 0) > 0).map(g => ({
+        id: `goal-${g.id}`,
+        name: g.name,
+        monthlyAmount: g.monthlyPlan
+    }));
 
-    const totalWeeklyAllowance = plannedItems.reduce((acc, item) => {
-        return acc + (item.monthlyPlan / 4.33);
+    const plannedObs = obligations.map(o => ({
+        id: `ob-${o.id}`,
+        name: o.name,
+        monthlyAmount: o.amount
+    }));
+
+    const allPlannedItems = [...plannedGoals, ...plannedObs];
+
+    const totalWeeklyAllowance = allPlannedItems.reduce((acc, item) => {
+        return acc + (item.monthlyAmount / 4.33);
     }, 0);
 
     return (
@@ -37,11 +49,11 @@ export const WeeklyPlanner: React.FC = () => {
             <div className="card planner-card">
 
                 <div className="planner-list">
-                    {plannedItems.length === 0 ? (
-                        <p className="empty-planner">No monthly plans set in your Goals.</p>
+                    {allPlannedItems.length === 0 ? (
+                        <p className="empty-planner">No monthly plans or obligations set.</p>
                     ) : (
-                        plannedItems.map(item => {
-                            const weeklyAmount = item.monthlyPlan / 4.33;
+                        allPlannedItems.map(item => {
+                            const weeklyAmount = item.monthlyAmount / 4.33;
 
                             return (
                                 <div key={item.id} className="planner-item">
@@ -51,7 +63,7 @@ export const WeeklyPlanner: React.FC = () => {
                                     <div className="planner-details">
                                         <span className="planner-name">{item.name}</span>
                                         <span className="planner-calc">
-                                            (₱{item.monthlyPlan} / 4.33)
+                                            (₱{item.monthlyAmount.toLocaleString()} / 4.33)
                                         </span>
                                     </div>
                                     <div className="planner-amount">

@@ -17,6 +17,7 @@ import { useAccountStore } from './stores/accountStore';
 import { useCategoryStore } from './stores/categoryStore';
 import { useTransactionStore } from './stores/transactionStore';
 import { useGoalStore } from './stores/goalStore';
+import { useObligationStore } from './stores/obligationStore';
 import { supabase } from './lib/supabase';
 import type { Session } from '@supabase/supabase-js';
 
@@ -37,6 +38,7 @@ function App() {
   const { fetchCategories } = useCategoryStore();
   const { fetchTransactions } = useTransactionStore();
   const { fetchGoals } = useGoalStore();
+  const { fetchObligations } = useObligationStore();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -59,7 +61,8 @@ function App() {
         fetchAccounts(),
         fetchCategories(),
         fetchTransactions(),
-        fetchGoals()
+        fetchGoals(),
+        fetchObligations()
       ]).catch(console.error);
     }
   }, [session, fetchAccounts, fetchCategories, fetchTransactions, fetchGoals]);

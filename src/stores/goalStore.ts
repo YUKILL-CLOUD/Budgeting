@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import type { Goal } from '../lib/db';
+import { useTransactionStore } from './transactionStore';
 import { toast } from 'sonner';
 
 interface GoalStore {
@@ -10,6 +11,7 @@ interface GoalStore {
     addGoal: (goal: Omit<Goal, 'id' | 'createdAt'>) => Promise<void>;
     updateGoal: (id: number, updates: Partial<Goal>) => Promise<void>;
     deleteGoal: (id: number) => Promise<void>;
+    fundGoal: (id: number, amount: number, fromAccountId: number, toAccountId?: number) => Promise<void>;
     checkAndRefreshGoals: () => Promise<void>;
 }
 
@@ -136,6 +138,29 @@ export const useGoalStore = create<GoalStore>((set, get) => ({
         } else {
             await get().fetchGoals();
         }
+    },
+
+    fundGoal: async (id, amount, fromAccountId, toAccountId) => {
+        const goal = get().goals.find(g => g.id === id);
+        if (!goal) return;
+
+        // 1. Update Goal Amount
+        const newAmount = (goal.currentAmount || 0) + amount;
+        await get().updateGoal(id, { currentAmount: newAmount });
+
+        // 2. Record Transaction (Transfer)
+        const { addTransaction } = useTransactionStore.getState();
+        await addTransaction({
+            accountId: fromAccountId,
+            amount,
+            type: 'transfer',
+            transferToAccountId: toAccountId,
+            date: new Date(),
+            note: `Goal Funding: ${goal.name}`,
+            categoryId: undefined // Categorization not required for transfers in this context usually
+        });
+
+        toast.success(`Allocated ₱${amount.toLocaleString()} to ${goal.name}`);
     },
 
     checkAndRefreshGoals: async () => {

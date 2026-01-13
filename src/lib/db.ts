@@ -54,6 +54,14 @@ export interface RecurringTransaction {
     isActive: boolean;
 }
 
+export interface Obligation {
+    id?: number;
+    name: string;
+    amount: number;
+    priority: 'high' | 'medium' | 'low';
+    createdAt: Date;
+}
+
 export interface Goal {
     id?: number;
     name: string;
@@ -78,6 +86,7 @@ export class BudgetDatabase extends Dexie {
     budgets!: Table<Budget>;
     recurringTransactions!: Table<RecurringTransaction>;
     goals!: Table<Goal>;
+    obligations!: Table<Obligation>;
 
     constructor() {
         super('BudgetDatabase');
@@ -88,7 +97,8 @@ export class BudgetDatabase extends Dexie {
             categories: '++id, name, type, parentId',
             budgets: '++id, categoryId, period, startDate',
             recurringTransactions: '++id, accountId, categoryId, nextDate, isActive',
-            goals: '++id, status, deadline'
+            goals: '++id, status, deadline',
+            obligations: '++id, name, priority'
         });
     }
 }

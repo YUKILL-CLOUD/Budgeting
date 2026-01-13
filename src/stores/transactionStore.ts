@@ -46,10 +46,16 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
             console.error('Error fetching transactions:', error);
             toast.error('Failed to sync transactions');
         } else {
-            // Convert strings back to Date objects if needed by UI
+            // Convert snake_case from Supabase back to camelCase for App
             const formatted = data.map((t: any) => ({
-                ...t,
+                id: t.id,
+                accountId: t.account_id,
+                amount: t.amount,
+                type: t.type,
+                categoryId: t.category_id,
+                transferToAccountId: t.transfer_to_account_id,
                 date: new Date(t.date),
+                note: t.note,
                 createdAt: new Date(t.created_at)
             }));
             set({ transactions: formatted as Transaction[] });
@@ -61,11 +67,17 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        // 1. Insert Transaction
+        // 1. Insert Transaction (Map to snake_case for Supabase)
         const { error } = await supabase
             .from('transactions')
             .insert({
-                ...transaction,
+                type: transaction.type,
+                amount: transaction.amount,
+                account_id: transaction.accountId,
+                category_id: transaction.categoryId,
+                transfer_to_account_id: transaction.transferToAccountId,
+                note: transaction.note,
+                date: transaction.date,
                 user_id: user.id
             });
 

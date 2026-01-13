@@ -23,6 +23,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({ onClose, edi
     const [categoryId, setCategoryId] = useState(editingTransaction?.categoryId?.toString() || '');
     const [date, setDate] = useState(editingTransaction ? new Date(editingTransaction.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
     const [note, setNote] = useState(editingTransaction?.note || '');
+    const [isSaving, setIsSaving] = useState(false);
 
     const filteredCategories = categories.filter(c => c.type === (type === 'income' ? 'income' : 'expense'));
 
@@ -35,6 +36,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({ onClose, edi
         }
 
         try {
+            setIsSaving(true);
             const transactionData = {
                 type,
                 amount: parseFloat(amount),
@@ -57,6 +59,8 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({ onClose, edi
         } catch (error) {
             toast.error(editingTransaction ? 'Failed to update transaction' : 'Failed to add transaction');
             console.error(error);
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -219,8 +223,15 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({ onClose, edi
                         <button type="button" className="btn-modal-cancel" onClick={onClose}>
                             Cancel
                         </button>
-                        <button type="submit" className="btn-modal-submit">
-                            {editingTransaction ? 'Update Transaction' : 'Save Transaction'}
+                        <button type="submit" className={`btn-modal-submit ${isSaving ? 'btn-loading' : ''}`} disabled={isSaving}>
+                            {isSaving ? (
+                                <>
+                                    <div className="spinner" />
+                                    <span>Saving...</span>
+                                </>
+                            ) : (
+                                editingTransaction ? 'Update Transaction' : 'Save Transaction'
+                            )}
                         </button>
                     </div>
                 </form>

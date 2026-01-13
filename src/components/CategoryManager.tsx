@@ -18,6 +18,7 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({ onClose, isOpe
     const [name, setName] = useState('');
     const [color, setColor] = useState('#6366f1');
     const [icon, setIcon] = useState('Tag');
+    const [isSaving, setIsSaving] = useState(false);
 
     if (!isOpen) return null;
 
@@ -42,6 +43,7 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({ onClose, isOpe
         if (!name.trim()) return;
 
         try {
+            setIsSaving(true);
             if (editingId) {
                 await updateCategory(editingId, { name, color, icon });
                 toast.success('Category updated');
@@ -57,6 +59,8 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({ onClose, isOpe
             resetForm();
         } catch (err) {
             toast.error('Failed to save category');
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -142,8 +146,15 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({ onClose, isOpe
                             <button type="button" className="btn-modal-cancel" onClick={resetForm}>
                                 Cancel
                             </button>
-                            <button type="submit" className="btn-modal-submit">
-                                {editingId ? 'Update Category' : 'Create Category'}
+                            <button type="submit" className={`btn-modal-submit ${isSaving ? 'btn-loading' : ''}`} disabled={isSaving}>
+                                {isSaving ? (
+                                    <>
+                                        <div className="spinner" />
+                                        <span>Saving...</span>
+                                    </>
+                                ) : (
+                                    editingId ? 'Update Category' : 'Create Category'
+                                )}
                             </button>
                         </div>
                     </form>

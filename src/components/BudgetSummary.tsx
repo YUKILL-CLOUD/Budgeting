@@ -2,11 +2,13 @@ import React, { useMemo } from 'react';
 import { TrendingUp, TrendingDown, Target, Wallet } from 'lucide-react';
 import { useTransactionStore } from '../stores/transactionStore';
 import { useGoalStore } from '../stores/goalStore';
+import { useObligationStore } from '../stores/obligationStore';
 import { startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 
 export const BudgetSummary: React.FC = () => {
     const { transactions } = useTransactionStore();
     const { goals } = useGoalStore();
+    const { obligations } = useObligationStore();
 
     // Calculate metrics
     const { totalIncome, totalPlannedExpenses, totalSavings } = useMemo(() => {
@@ -19,16 +21,17 @@ export const BudgetSummary: React.FC = () => {
             .filter(t => t.type === 'income' && isWithinInterval(new Date(t.date), { start: monthStart, end: monthEnd }))
             .reduce((sum, t) => sum + t.amount, 0);
 
-        // Planned Expenses (Based on Goal/Bill Blueprints - monthlyPlan)
-        // We assume bills/obligations have a 'monthlyPlan' set.
-        const expenses = goals.reduce((sum, g) => sum + (g.monthlyPlan || 0), 0);
+        // Planned Expenses (Bills + Monthly Savings Plans)
+        const goalMonthlyTotal = goals.reduce((sum, g) => sum + (g.monthlyPlan || 0), 0);
+        const obligationTotal = obligations.reduce((sum, o) => sum + (o.amount || 0), 0);
+        const totalPlanned = goalMonthlyTotal + obligationTotal;
 
-        // Savings Targets (Total Target of non-monthly-refresh goals)
-        const savingsGoals = goals.filter(g => g.refreshType !== 'monthly');
-        const savings = savingsGoals.reduce((sum, g) => sum + (g.targetAmount || 0), 0);
+        // "Savings Targets" in this context should probably show the Monthly Planned Savings 
+        // to avoid overwhelming with the total 230k target.
+        const monthlySavingsTargets = goalMonthlyTotal;
 
-        return { totalIncome: income, totalPlannedExpenses: expenses, totalSavings: savings };
-    }, [transactions, goals]);
+        return { totalIncome: income, totalPlannedExpenses: totalPlanned, totalSavings: monthlySavingsTargets };
+    }, [transactions, goals, obligations]);
 
     const remainingBalance = totalIncome - totalPlannedExpenses;
     const isZeroBased = Math.abs(remainingBalance) < 1;
@@ -60,7 +63,7 @@ export const BudgetSummary: React.FC = () => {
                 <div className="summary-item savings">
                     <div className="icon-badge savings-bg"><Target size={20} /></div>
                     <div className="summary-details">
-                        <span className="label">Savings Targets</span>
+                        <span className="label">Planned Savings</span>
                         <span className="value">₱ {totalSavings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                 </div>

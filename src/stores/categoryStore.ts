@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import type { Category } from '../lib/db';
+import { defaultCategories } from '../lib/seed';
 import { toast } from 'sonner';
 
 interface CategoryStore {
@@ -33,10 +34,24 @@ export const useCategoryStore = create<CategoryStore>((set, get) => ({
         if (error) {
             console.error('Error fetching categories:', error);
             toast.error('Failed to sync categories');
+            set({ loading: false });
         } else {
-            set({ categories: data as Category[] });
+            if (data && data.length === 0) {
+                // Auto-seed samples if empty
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                    const seedData = defaultCategories.map(c => ({ ...c, user_id: user.id }));
+                    await supabase.from('categories').insert(seedData);
+                    // Re-fetch after seeding
+                    const { data: seeded } = await supabase.from('categories').select('*').order('name', { ascending: true });
+                    set({ categories: seeded as Category[], loading: false });
+                } else {
+                    set({ categories: [], loading: false });
+                }
+            } else {
+                set({ categories: data as Category[], loading: false });
+            }
         }
-        set({ loading: false });
     },
 
     addCategory: async (category) => {

@@ -22,6 +22,30 @@
   --transition: all 0.2s ease-in-out;
 }
 
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner {
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 0.8s linear infinite;
+}
+
+.btn-loading {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.75rem !important;
+  opacity: 0.8 !important;
+  cursor: not-allowed !important;
+}
+
 body {
   margin: 0;
   font-family: var(--font-family);
@@ -642,15 +666,10 @@ select {
 }
 
 .input-wrapper {
+  position: relative;
   display: flex;
   align-items: center;
-  position: relative;
-  background-color: rgba(0, 0, 0, 0.2);
-  border-radius: 6px;
-  padding: 0.5rem 0.75rem;
   flex: 1;
-  border: 1px solid transparent;
-  transition: var(--transition);
 }
 
 .input-wrapper:focus-within {
@@ -671,13 +690,23 @@ select {
 }
 
 .input-wrapper input {
-  background: transparent;
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
   color: var(--text-primary);
   width: 100%;
+  transition: var(--transition);
+}
+
+.input-wrapper input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  background: #0f172a;
 }
 
 .input-wrapper:has(.currency-prefix) input {
-  padding-left: 1.75rem !important;
+  padding-left: 2rem !important;
 }
 
 .select-wrapper select {
@@ -1565,11 +1594,12 @@ select {
 
 .currency-symbol-prefix {
   position: absolute;
-  left: 1.25rem;
-  font-size: 1.25rem;
+  left: 1rem;
+  font-size: 1.1rem;
   font-weight: 600;
-  color: #64748b;
+  color: #94a3b8;
   pointer-events: none;
+  z-index: 10;
 }
 
 .styled-input {
@@ -1594,6 +1624,13 @@ select {
   border-color: #6366f1;
   background: rgba(15, 23, 42, 0.8);
   box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+}
+
+.styled-input option,
+.styled-select-dark option,
+.styled-select-gold option {
+  background-color: #1e293b;
+  color: white;
 }
 
 .modal-actions {
@@ -1640,6 +1677,57 @@ select {
 
 .btn-modal-submit:active {
   transform: translateY(0);
+}
+
+.modal-actions-single {
+  margin-top: 2rem;
+  width: 100%;
+}
+
+.btn-modal-submit-gold {
+  width: 100%;
+  padding: 1.125rem;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  border: none;
+  border-radius: 12px;
+  color: #0f172a;
+  font-weight: 800;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+}
+
+.btn-modal-submit-gold:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
+  filter: brightness(1.1);
+}
+
+.large-input {
+  font-size: 2rem !important;
+  font-weight: 800 !important;
+  padding: 1rem 1.5rem 1rem 3.5rem !important;
+  height: auto !important;
+  text-align: center;
+}
+
+.input-icon-left {
+  position: absolute;
+  left: 1.25rem;
+  color: #64748b;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.mini-modal {
+  max-width: 480px !important;
+}
+
+.contribute-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
 }
 
 .help-text-preview {
@@ -2497,6 +2585,72 @@ select {
   transform: translateY(-2px);
 }
 
+.btn-pill-fund {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.8rem;
+  background: rgba(99, 102, 241, 0.15);
+  color: #818cf8;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-pill-fund:hover {
+  background: #6366f1;
+  color: white;
+  transform: translateY(-1px);
+}
+
+.styled-select-dark {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  width: 100%;
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.styled-select-dark:focus {
+  outline: none;
+  border-color: #6366f1;
+  background: rgba(15, 23, 42, 0.8);
+}
+
+.prio-select-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.4rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.prio-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.prio-select-group .styled-select-dark {
+  background: transparent;
+  border: none;
+  padding: 0;
+  width: auto;
+  min-width: 100px;
+}
+
 .styled-select-gold {
   background: rgba(245, 158, 11, 0.1) !important;
   border: 1px solid rgba(245, 158, 11, 0.2) !important;
@@ -2504,6 +2658,190 @@ select {
   border-radius: 12px !important;
   padding: 0.75rem !important;
   width: 100%;
+}
+
+/* Three Dot Menu & Premium Actions */
+.goal-planner-item {
+  position: relative;
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.goal-planner-item:hover {
+  transform: translateY(-4px);
+  background: rgba(30, 41, 59, 0.8);
+  border-color: rgba(251, 191, 36, 0.2);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+}
+
+.goal-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.goal-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: white;
+  letter-spacing: -0.01em;
+}
+
+.goal-meta-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.goal-target,
+.goal-monthly-plan {
+  padding: 0.35rem 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.goal-target {
+  color: #fbbf24;
+}
+
+.goal-progress-container {
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px dashed rgba(255, 255, 255, 0.05);
+}
+
+.progress-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.6rem;
+}
+
+.progress-label-row span:first-child {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.progress-label-row span:last-child {
+  font-size: 1rem;
+  font-weight: 800;
+  color: white;
+}
+
+.progress-bar-bg {
+  height: 12px;
+  background: #0f172a;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.progress-bar-fill.goal {
+  background: linear-gradient(90deg, #fbbf24, #f59e0b);
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+}
+
+.progress-values-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.goals-planner-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.05);
+  margin: 0.25rem 0;
+}
+
+.progress-values-row span:first-child {
+  color: #fbbf24;
+}
+
+/* Action Menu Restoration */
+.btn-actions-trigger {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.btn-actions-trigger:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+}
+
+.actions-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+  z-index: 100;
+  min-width: 160px;
+  overflow: hidden;
+  animation: slideInDown 0.2s ease-out;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+}
+
+.dropdown-item.danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.dropdown-item svg {
+  color: #64748b;
+}
+
+.dropdown-item:hover svg {
+  color: inherit;
 }
 
 .blueprint-item {

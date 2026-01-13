@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { PiggyBank, Wallet, Receipt, CheckCircle2, X } from 'lucide-react';
 import { useGoalStore } from '../stores/goalStore';
+import { useObligationStore } from '../stores/obligationStore';
 
 interface PaycheckAllocatorProps {
     isOpen?: boolean;
@@ -9,6 +10,7 @@ interface PaycheckAllocatorProps {
 
 export const PaycheckAllocator: React.FC<PaycheckAllocatorProps> = ({ isOpen, onClose }) => {
     const { goals } = useGoalStore();
+    const { obligations } = useObligationStore();
     const [actualIncome, setActualIncome] = useState<number>(0);
     const [spendingAllowance, setSpendingAllowance] = useState<number>(2000); // Default allowance
 
@@ -22,25 +24,39 @@ export const PaycheckAllocator: React.FC<PaycheckAllocatorProps> = ({ isOpen, on
         type: 'fixed' | 'saving'
     }[] = [];
 
+    // 1. OBLIGATIONS (FIXED)
+    obligations.forEach(ob => {
+        const amount = Number(ob.amount) || 0;
+        const weeklyNeed = amount / 4.33;
+        unifiedItems.push({
+            id: `ob-${ob.id}`,
+            name: ob.name,
+            weeklyMin: weeklyNeed,
+            monthlyTarget: amount,
+            priority: (ob.priority || 'high').toLowerCase() as 'high' | 'medium' | 'low',
+            type: 'fixed'
+        });
+    });
+
+    // 2. SAVINGS GOALS
     goals.forEach(goal => {
-        const monthlyPlan = goal.monthlyPlan || 0;
-        const totalTarget = goal.targetAmount || 0;
-        const fullMonthNeed = Math.max(monthlyPlan, totalTarget);
-        const weeklyPortion = fullMonthNeed / 4.33;
+        const monthlyPlan = Number(goal.monthlyPlan) || 0;
+        const targetAmount = Number(goal.targetAmount) || 0;
+        const currentAmount = Number(goal.currentAmount) || 0;
 
-        const rawPrio = (goal.priority || 'medium').toLowerCase();
-        const prio = (['high', 'medium', 'low'].includes(rawPrio) ? rawPrio : 'medium') as 'high' | 'medium' | 'low';
-
-        // High priority = Bills/Loans
-        const type = (goal.refreshType === 'monthly' || prio === 'high') ? 'fixed' : 'saving';
+        // If no monthly plan is set, we use the remaining target as the "total need" 
+        // but for weekly worksheet, we usually fund the plan. 
+        // Following "then" logic: Math.max(Monthly Plan, Total Target) for deciding priority need
+        const fullMonthNeed = monthlyPlan > 0 ? monthlyPlan : Math.max(0, targetAmount - currentAmount);
+        const weeklyNeed = fullMonthNeed / 4.33;
 
         unifiedItems.push({
-            id: `goal-${goal.id || Math.random()}`,
+            id: `goal-${goal.id}`,
             name: goal.name,
-            weeklyMin: weeklyPortion,
+            weeklyMin: weeklyNeed,
             monthlyTarget: fullMonthNeed,
-            priority: prio,
-            type
+            priority: (goal.priority || 'medium').toLowerCase() as 'high' | 'medium' | 'low',
+            type: 'saving'
         });
     });
 
@@ -49,14 +65,25 @@ export const PaycheckAllocator: React.FC<PaycheckAllocatorProps> = ({ isOpen, on
     const suggestions: Record<string, number> = {};
     unifiedItems.forEach(i => suggestions[i.id] = 0);
 
-    // --- PASS 1: SURVIVAL WATERFALL (High Priority Only) ---
-    unifiedItems.filter(item => item.priority === 'high').forEach(item => {
-        if (pool > 0 && item.weeklyMin > 0) {
-            const amountToGive = Math.min(pool, item.weeklyMin);
-            suggestions[item.id] = amountToGive;
-            pool -= amountToGive;
-        }
-    });
+    // --- PASS 1: SURVIVAL WATERFALL (Democratic Split for High priority) ---
+    let highPriorityItems = unifiedItems.filter(item => item.priority === 'high' && item.weeklyMin > 0);
+
+    while (pool > 0.5 && highPriorityItems.length > 0) {
+        const share = pool / highPriorityItems.length;
+        let poolConsumedThisRound = 0;
+
+        highPriorityItems.forEach(item => {
+            const currentAmount = suggestions[item.id] || 0;
+            const stillNeeded = item.weeklyMin - currentAmount;
+            const amountToApply = Math.min(share, stillNeeded);
+            suggestions[item.id] = currentAmount + amountToApply;
+            poolConsumedThisRound += amountToApply;
+        });
+
+        pool -= poolConsumedThisRound;
+        highPriorityItems = highPriorityItems.filter(item => (item.weeklyMin - (suggestions[item.id] || 0)) > 0.5);
+        if (poolConsumedThisRound < 0.1) break;
+    }
 
     // --- PASS 2: BALANCED GROWTH SPLIT (All Priorities) ---
     let activeGoals = unifiedItems.filter(item => (item.monthlyTarget - (suggestions[item.id] || 0)) > 0.5);
