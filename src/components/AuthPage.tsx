@@ -2,6 +2,10 @@ import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { Wallet, ArrowRight, Lock, Mail, KeyRound } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 
 export const AuthPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
@@ -67,114 +71,154 @@ export const AuthPage: React.FC = () => {
 
     if (recoverySent) {
         return (
-            <div className="auth-container">
-                <div className="auth-card success">
-                    <div className="auth-icon-box success">
-                        <Mail size={32} />
-                    </div>
-                    <h2>Check your email</h2>
-                    <p>We've sent a password reset link to <br /><strong className="highlight-text">{email}</strong></p>
-                    <button
-                        className="btn-text-link mt-4"
-                        onClick={() => { setRecoverySent(false); setMode('signin'); }}
-                    >
-                        Back to Login
-                    </button>
-                </div>
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 p-4">
+                <Card className="w-full max-w-md bg-[#1e293b] border-white/10 shadow-2xl">
+                    <CardHeader className="text-center space-y-4 pb-8">
+                        <div className="mx-auto w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center">
+                            <Mail className="text-emerald-400" size={32} />
+                        </div>
+                        <CardTitle className="text-2xl text-white">Check your email</CardTitle>
+                        <CardDescription className="text-slate-400">
+                            We've sent a password reset link to<br />
+                            <strong className="text-emerald-400">{email}</strong>
+                        </CardDescription>
+                    </CardHeader>
+                    <CardFooter className="justify-center">
+                        <Button
+                            variant="ghost"
+                            className="text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10"
+                            onClick={() => { setRecoverySent(false); setMode('signin'); }}
+                        >
+                            Back to Login
+                        </Button>
+                    </CardFooter>
+                </Card>
             </div>
         );
     }
 
     return (
-        <div className="auth-container">
-            <div className="auth-card">
-                <div className="app-brand-large">
-                    <div className="logo-box-large">
-                        <Wallet size={40} />
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 p-4">
+            <Card className="w-full max-w-md bg-[#1e293b] border-white/10 shadow-2xl">
+                <CardHeader className="text-center space-y-4 pb-6">
+                    <div className="mx-auto w-20 h-20 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-2xl flex items-center justify-center shadow-lg">
+                        <Wallet className="text-white" size={40} />
                     </div>
-                    <h1>ZeroBudget</h1>
-                    <p className="subtitle">Master your money, zero complications.</p>
-                </div>
-
-                <div className="divider-h"></div>
-
-                <form onSubmit={handleAuth} className="auth-form">
-                    <div className="input-group-auth">
-                        <label>Email</label>
-                        <div className="input-wrapper-auth">
-                            <Mail size={18} className="input-icon" />
-                            <input
-                                type="email"
-                                placeholder="name@example.com"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                disabled={loading}
-                                required
-                            />
-                        </div>
+                    <div>
+                        <CardTitle className="text-3xl font-black text-white mb-2">ZeroBudget</CardTitle>
+                        <CardDescription className="text-slate-400">Master your money, zero complications.</CardDescription>
                     </div>
+                </CardHeader>
 
-                    {mode !== 'recovery' && (
-                        <div className="input-group-auth">
-                            <label>Password</label>
-                            <div className="input-wrapper-auth">
-                                <KeyRound size={18} className="input-icon" />
-                                <input
-                                    type="password"
-                                    placeholder="••••••••"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
+                <CardContent>
+                    <form onSubmit={handleAuth} className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="email" className="text-slate-300">Email</Label>
+                            <div className="relative">
+                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                                <Input
+                                    id="email"
+                                    type="email"
+                                    placeholder="name@example.com"
+                                    className="pl-10 bg-slate-800 border-white/10 text-white placeholder:text-slate-500"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
                                     disabled={loading}
                                     required
                                 />
                             </div>
                         </div>
-                    )}
 
-                    <button type="submit" disabled={loading} className="btn-auth-submit">
-                        {loading
-                            ? 'Processing...'
-                            : (mode === 'signup' ? 'Create Account' : mode === 'recovery' ? 'Send Reset Link' : 'Sign In')
-                        }
-                        {!loading && <ArrowRight size={18} />}
-                    </button>
+                        {mode !== 'recovery' && (
+                            <div className="space-y-2">
+                                <Label htmlFor="password" className="text-slate-300">Password</Label>
+                                <div className="relative">
+                                    <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                                    <Input
+                                        id="password"
+                                        type="password"
+                                        placeholder="••••••••"
+                                        className="pl-10 bg-slate-800 border-white/10 text-white placeholder:text-slate-500"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        disabled={loading}
+                                        required
+                                    />
+                                </div>
+                            </div>
+                        )}
 
-                    <div className="auth-mode-toggle">
-                        {mode === 'signin' && (
-                            <>
-                                <button type="button" className="btn-text-link mb-2" onClick={() => setMode('recovery')}>
-                                    Forgot password?
-                                </button>
-                                <p>
-                                    Don't have an account?
-                                    <button type="button" className="btn-text-link" onClick={() => setMode('signup')}>
-                                        Sign Up
-                                    </button>
+                        <Button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white font-bold py-6 text-base shadow-lg"
+                        >
+                            {loading
+                                ? 'Processing...'
+                                : (mode === 'signup' ? 'Create Account' : mode === 'recovery' ? 'Send Reset Link' : 'Sign In')
+                            }
+                            {!loading && <ArrowRight className="ml-2" size={18} />}
+                        </Button>
+
+                        <div className="space-y-2 text-center pt-2">
+                            {mode === 'signin' && (
+                                <>
+                                    <Button
+                                        type="button"
+                                        variant="link"
+                                        className="text-slate-400 hover:text-indigo-400 h-auto p-0"
+                                        onClick={() => setMode('recovery')}
+                                    >
+                                        Forgot password?
+                                    </Button>
+                                    <p className="text-sm text-slate-500">
+                                        Don't have an account?{' '}
+                                        <Button
+                                            type="button"
+                                            variant="link"
+                                            className="text-indigo-400 hover:text-indigo-300 h-auto p-0"
+                                            onClick={() => setMode('signup')}
+                                        >
+                                            Sign Up
+                                        </Button>
+                                    </p>
+                                </>
+                            )}
+
+                            {mode === 'signup' && (
+                                <p className="text-sm text-slate-500">
+                                    Already have an account?{' '}
+                                    <Button
+                                        type="button"
+                                        variant="link"
+                                        className="text-indigo-400 hover:text-indigo-300 h-auto p-0"
+                                        onClick={() => setMode('signin')}
+                                    >
+                                        Sign In
+                                    </Button>
                                 </p>
-                            </>
-                        )}
+                            )}
 
-                        {mode === 'signup' && (
-                            <p>
-                                Already have an account?
-                                <button type="button" className="btn-text-link" onClick={() => setMode('signin')}>
-                                    Sign In
-                                </button>
-                            </p>
-                        )}
+                            {mode === 'recovery' && (
+                                <Button
+                                    type="button"
+                                    variant="link"
+                                    className="text-slate-400 hover:text-indigo-400 h-auto p-0"
+                                    onClick={() => setMode('signin')}
+                                >
+                                    Back to Login
+                                </Button>
+                            )}
+                        </div>
+                    </form>
+                </CardContent>
 
-                        {mode === 'recovery' && (
-                            <button type="button" className="btn-text-link" onClick={() => setMode('signin')}>
-                                Back to Login
-                            </button>
-                        )}
-                    </div>
-                </form>
-
-                <p className="auth-footer">
-                    <Lock size={12} /> Secure login provided by Supabase
-                </p>
-            </div>
+                <CardFooter className="justify-center border-t border-white/5 pt-6">
+                    <p className="text-xs text-slate-500 flex items-center gap-2">
+                        <Lock size={12} /> Secure login provided by Supabase
+                    </p>
+                </CardFooter>
+            </Card>
         </div>
     );
 };

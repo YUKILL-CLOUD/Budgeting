@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
-import { X, Wallet, ArrowRightLeft } from 'lucide-react';
+import { Wallet, ArrowRightLeft } from 'lucide-react';
 import { useAccountStore } from '../stores/accountStore';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface ContributeModalProps {
     goalName: string;
@@ -35,26 +39,24 @@ export const ContributeModal: React.FC<ContributeModalProps> = ({ goalName, defa
     };
 
     return (
-        <div className="modal-overlay" onClick={onClose}>
-            <div className="modal-content mini-modal" onClick={(e) => e.stopPropagation()}>
-                <div className="modal-header">
-                    <div className="header-with-subtitle">
-                        <h2>Add Funds</h2>
-                        <p className="subtitle">Allocating to: {goalName}</p>
-                    </div>
-                    <button className="btn-icon" onClick={onClose}>
-                        <X size={20} />
-                    </button>
-                </div>
+        <Dialog open={true} onOpenChange={onClose}>
+            <DialogContent className="sm:max-w-[425px] bg-[#1e293b] border-white/10 text-white">
+                <DialogHeader>
+                    <DialogTitle>Add Funds</DialogTitle>
+                    <DialogDescription className="text-slate-400">
+                        Allocating to: <span className="text-white font-medium">{goalName}</span>
+                    </DialogDescription>
+                </DialogHeader>
 
-                <form onSubmit={handleSubmit} className="contribute-form">
-                    <div className="form-group">
-                        <label className="field-label caps">Contribution Amount</label>
-                        <div className="input-wrapper">
-                            <span className="currency-symbol-prefix">₱</span>
-                            <input
+                <form onSubmit={handleSubmit} className="space-y-6 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="amount" className="text-slate-300">Contribution Amount</Label>
+                        <div className="relative">
+                            <span className="absolute left-3 top-2.5 text-slate-400 text-sm">₱</span>
+                            <Input
+                                id="amount"
                                 type="number"
-                                className="styled-input large-input"
+                                className="pl-7 bg-slate-800 border-white/10 text-white text-lg font-medium h-12"
                                 autoFocus
                                 value={amount}
                                 onChange={(e) => setAmount(e.target.value)}
@@ -64,55 +66,51 @@ export const ContributeModal: React.FC<ContributeModalProps> = ({ goalName, defa
                         </div>
                     </div>
 
-                    <div className="form-group">
-                        <label className="field-label caps">Deduct From</label>
-                        <div className="input-wrapper">
-                            <Wallet size={18} className="input-icon-left" />
-                            <select
-                                value={fromAccountId}
-                                onChange={e => setFromAccountId(e.target.value)}
-                                className="styled-input"
-                                required
-                            >
-                                <option value="">Select Source Account</option>
-                                {accounts.map(acc => (
-                                    <option key={acc.id} value={acc.id}>{acc.name} (₱{acc.balance.toLocaleString()})</option>
-                                ))}
-                            </select>
-                        </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="fromAccount" className="flex items-center gap-1.5 text-slate-300">
+                            <Wallet size={14} /> Deduct From
+                        </Label>
+                        <select
+                            id="fromAccount"
+                            value={fromAccountId}
+                            onChange={e => setFromAccountId(e.target.value)}
+                            className="flex h-10 w-full rounded-md border border-white/10 bg-slate-800 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 text-white"
+                            required
+                        >
+                            <option value="">Select Source Account</option>
+                            {accounts.map(acc => (
+                                <option key={acc.id} value={acc.id}>{acc.name} (₱{acc.balance.toLocaleString()})</option>
+                            ))}
+                        </select>
                     </div>
 
-                    <div className="form-group">
-                        <label className="field-label caps">Target Account (Optional)</label>
-                        <div className="input-wrapper">
-                            <ArrowRightLeft size={18} className="input-icon-left" />
-                            <select
-                                value={toAccountId}
-                                onChange={e => setToAccountId(e.target.value)}
-                                className="styled-input"
-                            >
-                                <option value="">No Bank Transfer</option>
-                                {accounts.map(acc => (
-                                    <option key={acc.id} value={acc.id}>{acc.name}</option>
-                                ))}
-                            </select>
-                        </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="toAccount" className="flex items-center gap-1.5 text-slate-300">
+                            <ArrowRightLeft size={14} /> Target Account (Optional)
+                        </Label>
+                        <select
+                            id="toAccount"
+                            value={toAccountId}
+                            onChange={e => setToAccountId(e.target.value)}
+                            className="flex h-10 w-full rounded-md border border-white/10 bg-slate-800 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 text-white"
+                        >
+                            <option value="">No Bank Transfer</option>
+                            {accounts.map(acc => (
+                                <option key={acc.id} value={acc.id}>{acc.name}</option>
+                            ))}
+                        </select>
                     </div>
 
-                    <div className="modal-actions-single">
-                        <button type="submit" className={`btn-modal-submit-gold ${isSaving ? 'btn-loading' : ''}`} disabled={isSaving}>
-                            {isSaving ? (
-                                <>
-                                    <div className="spinner" />
-                                    <span>Allocating...</span>
-                                </>
-                            ) : (
-                                'Confirm Contribution'
-                            )}
-                        </button>
-                    </div>
+                    <DialogFooter>
+                        <Button type="button" variant="ghost" onClick={onClose} className="text-slate-400 hover:text-white hover:bg-white/10">
+                            Cancel
+                        </Button>
+                        <Button type="submit" disabled={isSaving} className="bg-amber-500 hover:bg-amber-600 text-black font-semibold">
+                            {isSaving ? 'Allocating...' : 'Confirm Contribution'}
+                        </Button>
+                    </DialogFooter>
                 </form>
-            </div>
-        </div>
+            </DialogContent>
+        </Dialog>
     );
 };

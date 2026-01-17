@@ -2,6 +2,7 @@ import React from 'react';
 import { CalendarClock, ShoppingBag } from 'lucide-react';
 import { useGoalStore } from '../stores/goalStore';
 import { useObligationStore } from '../stores/obligationStore';
+import { Card, CardContent } from "@/components/ui/card";
 
 export const WeeklyPlanner: React.FC = () => {
     const { goals } = useGoalStore();
@@ -27,55 +28,66 @@ export const WeeklyPlanner: React.FC = () => {
     }, 0);
 
     return (
-        <div className="planner-container">
-            <div className="tab-page-header">
-                <div className="header-with-icon">
-                    <div className="header-icon-pill">
-                        <CalendarClock size={24} />
+        <div className="space-y-6">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-indigo-500/10 rounded-lg">
+                        <CalendarClock className="text-indigo-400" size={24} />
                     </div>
-                    <div className="header-text-with-action">
-                        <div>
-                            <h2 className="page-title">Spending Allowances</h2>
-                            <p className="page-subtitle">Weekly breakdown of your monthly blueprints</p>
-                        </div>
-                        <div className="total-allowance-badge">
-                            <span className="allowance-label">Total Weekly Need:</span>
-                            <span className="allowance-value">₱ {totalWeeklyAllowance.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                        </div>
+                    <div>
+                        <h2 className="text-2xl font-bold tracking-tight text-white">Spending Allowances</h2>
+                        <p className="text-sm text-slate-400">Weekly breakdown of your monthly blueprints</p>
                     </div>
+                </div>
+
+                {/* Total Badge */}
+                <div className="bg-gradient-to-br from-amber-500/20 to-orange-600/20 border border-amber-500/30 rounded-xl px-6 py-3 flex flex-col items-center md:items-end">
+                    <span className="text-xs font-bold text-amber-500/80 uppercase tracking-wider mb-1">Total Weekly Need</span>
+                    <span className="text-2xl font-black text-amber-400">₱ {totalWeeklyAllowance.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                 </div>
             </div>
 
-            <div className="card planner-card">
-
-                <div className="planner-list">
+            {/* Planner Card */}
+            <Card className="bg-[#1e293b] border-white/5">
+                <CardContent className="p-6">
                     {allPlannedItems.length === 0 ? (
-                        <p className="empty-planner">No monthly plans or obligations set.</p>
+                        <div className="text-center py-12">
+                            <CalendarClock className="mx-auto mb-4 text-slate-600" size={48} />
+                            <p className="text-slate-500 italic">No monthly plans or obligations set.</p>
+                            <p className="text-sm text-slate-600 mt-2">Add goals or obligations to see your weekly breakdown.</p>
+                        </div>
                     ) : (
-                        allPlannedItems.map(item => {
-                            const weeklyAmount = item.monthlyAmount / 4.33;
+                        <div className="space-y-3">
+                            {allPlannedItems.map(item => {
+                                const weeklyAmount = item.monthlyAmount / 4.33;
 
-                            return (
-                                <div key={item.id} className="planner-item">
-                                    <div className="planner-icon">
-                                        <ShoppingBag size={18} />
+                                return (
+                                    <div key={item.id} className="group flex items-center gap-4 p-4 rounded-xl bg-slate-800/40 border border-white/5 hover:bg-slate-800 hover:border-white/10 transition-all">
+                                        <div className="p-3 bg-indigo-500/10 rounded-lg group-hover:bg-indigo-500/20 transition-colors">
+                                            <ShoppingBag className="text-indigo-400" size={20} />
+                                        </div>
+
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="font-semibold text-white mb-1 truncate">{item.name}</h3>
+                                            <p className="text-xs text-slate-500">
+                                                (₱{item.monthlyAmount.toLocaleString()} ÷ 4.33 weeks)
+                                            </p>
+                                        </div>
+
+                                        <div className="text-right">
+                                            <div className="text-2xl font-bold text-white">
+                                                ₱ {weeklyAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                            </div>
+                                            <span className="text-xs text-slate-500 font-medium">/ week</span>
+                                        </div>
                                     </div>
-                                    <div className="planner-details">
-                                        <span className="planner-name">{item.name}</span>
-                                        <span className="planner-calc">
-                                            (₱{item.monthlyAmount.toLocaleString()} / 4.33)
-                                        </span>
-                                    </div>
-                                    <div className="planner-amount">
-                                        ₱ {weeklyAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                                        <span className="planner-period">/ week</span>
-                                    </div>
-                                </div>
-                            );
-                        })
+                                );
+                            })}
+                        </div>
                     )}
-                </div>
-            </div>
+                </CardContent>
+            </Card>
         </div>
     );
 };

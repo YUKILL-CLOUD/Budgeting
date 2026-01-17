@@ -3,6 +3,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recha
 import { useTransactionStore } from '../stores/transactionStore';
 import { useCategoryStore } from '../stores/categoryStore';
 import { startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const BudgetChart: React.FC = () => {
     const { transactions } = useTransactionStore();
@@ -37,9 +38,9 @@ export const BudgetChart: React.FC = () => {
     const CustomTooltip = ({ active, payload }: any) => {
         if (active && payload && payload.length) {
             return (
-                <div className="custom-tooltip">
-                    <p className="label">{`${payload[0].name}`}</p>
-                    <p className="intro">₱ {payload[0].value.toLocaleString()}</p>
+                <div className="bg-[#1e293b] border border-white/10 rounded-lg p-3 shadow-xl">
+                    <p className="font-semibold text-white mb-1">{`${payload[0].name}`}</p>
+                    <p className="text-emerald-400 font-bold">₱ {payload[0].value.toLocaleString()}</p>
                 </div>
             );
         }
@@ -47,40 +48,42 @@ export const BudgetChart: React.FC = () => {
     };
 
     return (
-        <div className="card chart-card">
-            <div className="card-header">
-                <h2>Expense Allocation</h2>
-                <p className="subtitle">Actual spending this month</p>
-            </div>
-            {data.length > 0 ? (
-                <div style={{ width: '100%', height: 300 }}>
-                    <ResponsiveContainer>
-                        <PieChart>
-                            <Pie
-                                data={data}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={60}
-                                outerRadius={80}
-                                paddingAngle={5}
-                                dataKey="value"
-                                animationBegin={0}
-                                animationDuration={1500}
-                            >
-                                {data.map((_, index) => (
-                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                ))}
-                            </Pie>
-                            <Tooltip content={<CustomTooltip />} />
-                            <Legend verticalAlign="bottom" height={36} />
-                        </PieChart>
-                    </ResponsiveContainer>
-                </div>
-            ) : (
-                <div className="empty-chart-state" style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
-                    No expense data for this month
-                </div>
-            )}
-        </div>
+        <Card className="bg-[#1e293b] border-white/5">
+            <CardHeader className="border-b border-white/5 pb-4">
+                <CardTitle className="text-xl text-white">Expense Allocation</CardTitle>
+                <CardDescription className="text-slate-400">Actual spending this month</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+                {data.length > 0 ? (
+                    <div style={{ width: '100%', height: 300 }}>
+                        <ResponsiveContainer>
+                            <PieChart>
+                                <Pie
+                                    data={data}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={60}
+                                    outerRadius={80}
+                                    paddingAngle={5}
+                                    dataKey="value"
+                                    animationBegin={0}
+                                    animationDuration={1500}
+                                >
+                                    {data.map((_, index) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip content={<CustomTooltip />} />
+                                <Legend verticalAlign="bottom" height={36} />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
+                ) : (
+                    <div className="h-[300px] flex items-center justify-center">
+                        <p className="text-slate-500 italic">No expense data for this month</p>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
     );
 };

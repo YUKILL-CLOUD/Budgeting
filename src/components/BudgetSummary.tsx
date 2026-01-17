@@ -4,6 +4,7 @@ import { useTransactionStore } from '../stores/transactionStore';
 import { useGoalStore } from '../stores/goalStore';
 import { useObligationStore } from '../stores/obligationStore';
 import { startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const BudgetSummary: React.FC = () => {
     const { transactions } = useTransactionStore();
@@ -37,54 +38,74 @@ export const BudgetSummary: React.FC = () => {
     const isZeroBased = Math.abs(remainingBalance) < 1;
 
     return (
-        <div className="card summary-card">
-            <div className="card-header centered">
-                <h2>Financial Blueprint</h2>
-                <p className="subtitle">Current Month Overview</p>
-            </div>
+        <Card className="bg-[#1e293b] border-white/5">
+            <CardHeader className="text-center border-b border-white/5 pb-4">
+                <CardTitle className="text-2xl text-white">Financial Blueprint</CardTitle>
+                <CardDescription className="text-slate-400">Current Month Overview</CardDescription>
+            </CardHeader>
 
-            <div className="summary-grid">
-                <div className="summary-item income">
-                    <div className="icon-badge income-bg"><TrendingUp size={20} /></div>
-                    <div className="summary-details">
-                        <span className="label">Actual Income</span>
-                        <span className="value">₱ {totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <CardContent className="pt-6 space-y-6">
+                {/* Summary Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Income */}
+                    <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border border-emerald-500/20">
+                        <div className="p-3 bg-emerald-500/20 rounded-lg shrink-0">
+                            <TrendingUp className="text-emerald-400" size={24} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-xs font-semibold text-emerald-400/80 uppercase tracking-wider mb-1">Actual Income</p>
+                            <p className="text-lg font-bold text-white break-all">₱ {totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                        </div>
+                    </div>
+
+                    {/* Expenses */}
+                    <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-rose-500/10 to-rose-600/5 border border-rose-500/20">
+                        <div className="p-3 bg-rose-500/20 rounded-lg shrink-0">
+                            <TrendingDown className="text-rose-400" size={24} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-xs font-semibold text-rose-400/80 uppercase tracking-wider mb-1">Planned Expenses</p>
+                            <p className="text-lg font-bold text-white break-all">₱ {totalPlannedExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                        </div>
+                    </div>
+
+                    {/* Savings */}
+                    <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-amber-500/10 to-amber-600/5 border border-amber-500/20">
+                        <div className="p-3 bg-amber-500/20 rounded-lg shrink-0">
+                            <Target className="text-amber-400" size={24} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-xs font-semibold text-amber-400/80 uppercase tracking-wider mb-1">Planned Savings</p>
+                            <p className="text-lg font-bold text-white break-all">₱ {totalSavings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                        </div>
                     </div>
                 </div>
 
-                <div className="summary-item expense">
-                    <div className="icon-badge expense-bg"><TrendingDown size={20} /></div>
-                    <div className="summary-details">
-                        <span className="label">Planned Expenses</span>
-                        <span className="value">₱ {totalPlannedExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                {/* Net Flow Section */}
+                <div className={`p-6 rounded-xl border-2 ${isZeroBased
+                    ? 'bg-gradient-to-br from-indigo-500/10 to-violet-600/10 border-indigo-500/30'
+                    : remainingBalance > 0
+                        ? 'bg-gradient-to-br from-emerald-500/10 to-emerald-600/10 border-emerald-500/30'
+                        : 'bg-gradient-to-br from-rose-500/10 to-rose-600/10 border-rose-500/30'
+                    }`}>
+                    <div className="flex items-center gap-3 mb-3">
+                        <Wallet className={`${isZeroBased ? 'text-indigo-400' : remainingBalance > 0 ? 'text-emerald-400' : 'text-rose-400'
+                            }`} size={28} />
+                        <h3 className="text-lg font-bold text-white">Net Flow</h3>
                     </div>
-                </div>
-
-                <div className="summary-item savings">
-                    <div className="icon-badge savings-bg"><Target size={20} /></div>
-                    <div className="summary-details">
-                        <span className="label">Planned Savings</span>
-                        <span className="value">₱ {totalSavings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <div className={`text-4xl font-black mb-2 ${isZeroBased ? 'text-indigo-400' : remainingBalance > 0 ? 'text-emerald-400' : 'text-rose-400'
+                        }`}>
+                        ₱ {remainingBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
+                    <p className="text-sm text-slate-300">
+                        {isZeroBased
+                            ? "✨ Perfectly balanced."
+                            : remainingBalance > 0
+                                ? "💰 Surplus available for savings or goals."
+                                : "⚠️ Deficit based on Planned Expenses."}
+                    </p>
                 </div>
-            </div>
-
-            <div className={`balance-section ${isZeroBased ? 'balanced' : remainingBalance > 0 ? 'surplus' : 'deficit'}`}>
-                <div className="balance-header">
-                    <Wallet size={24} />
-                    <h3>Net Flow</h3>
-                </div>
-                <div className="balance-amount">
-                    ₱ {remainingBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </div>
-                <div className="balance-status">
-                    {isZeroBased
-                        ? "Perfectly balanced."
-                        : remainingBalance > 0
-                            ? "Surplus available for savings or goals."
-                            : "Deficit based on Planned Expenses."}
-                </div>
-            </div>
-        </div>
+            </CardContent>
+        </Card>
     );
 };

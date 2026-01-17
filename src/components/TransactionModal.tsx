@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
-import { X, Plus, Minus, ArrowRightLeft, Calendar, Tag, Wallet, MessageSquare } from 'lucide-react';
+import { Plus, Minus, ArrowRightLeft, Calendar, Tag, Wallet, MessageSquare } from 'lucide-react';
 import { useAccountStore } from '../stores/accountStore';
 import { useCategoryStore } from '../stores/categoryStore';
 import { useTransactionStore } from '../stores/transactionStore';
 import { toast } from 'sonner';
 import type { Transaction } from '../lib/db';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 interface TransactionModalProps {
     onClose: () => void;
@@ -65,55 +70,74 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({ onClose, edi
     };
 
     return (
-        <div className="modal-overlay" onClick={onClose}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                <div className="modal-header">
-                    <h2>{editingTransaction ? 'Edit Transaction' : 'Add Transaction'}</h2>
-                    <button className="btn-icon" onClick={onClose}>
-                        <X size={20} />
-                    </button>
-                </div>
+        <Dialog open={true} onOpenChange={onClose}>
+            <DialogContent className="sm:max-w-[500px] bg-[#1e293b] border-white/10 text-white">
+                <DialogHeader>
+                    <DialogTitle>{editingTransaction ? 'Edit Transaction' : 'New Transaction'}</DialogTitle>
+                    <DialogDescription className="text-slate-400">
+                        Record your income, expenses, or transfers.
+                    </DialogDescription>
+                </DialogHeader>
 
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmit} className="space-y-4 py-2">
                     {/* Type Selector */}
-                    <div className="form-group">
-                        <label>Type</label>
-                        <div className="mode-selector">
-                            <button
+                    <div className="space-y-2">
+                        <Label className="text-slate-300">Type</Label>
+                        <div className="grid grid-cols-3 gap-2">
+                            <Button
                                 type="button"
-                                className={`mode-btn ${type === 'expense' ? 'active' : ''}`}
+                                variant={type === 'expense' ? 'default' : 'outline'}
+                                className={cn(
+                                    "flex flex-col h-auto py-3 gap-1 border-white/10 hover:bg-white/5 hover:text-white",
+                                    type === 'expense'
+                                        ? "bg-rose-500 hover:bg-rose-600 text-white border-transparent"
+                                        : "bg-slate-800 text-slate-400"
+                                )}
                                 onClick={() => setType('expense')}
                             >
-                                <Minus size={20} />
-                                <span>Expense</span>
-                            </button>
-                            <button
+                                <Minus size={18} />
+                                <span className="text-xs">Expense</span>
+                            </Button>
+                            <Button
                                 type="button"
-                                className={`mode-btn ${type === 'income' ? 'active' : ''}`}
+                                variant={type === 'income' ? 'default' : 'outline'}
+                                className={cn(
+                                    "flex flex-col h-auto py-3 gap-1 border-white/10 hover:bg-white/5 hover:text-white",
+                                    type === 'income'
+                                        ? "bg-emerald-500 hover:bg-emerald-600 text-white border-transparent"
+                                        : "bg-slate-800 text-slate-400"
+                                )}
                                 onClick={() => setType('income')}
                             >
-                                <Plus size={20} />
-                                <span>Income</span>
-                            </button>
-                            <button
+                                <Plus size={18} />
+                                <span className="text-xs">Income</span>
+                            </Button>
+                            <Button
                                 type="button"
-                                className={`mode-btn ${type === 'transfer' ? 'active' : ''}`}
+                                variant={type === 'transfer' ? 'default' : 'outline'}
+                                className={cn(
+                                    "flex flex-col h-auto py-3 gap-1 border-white/10 hover:bg-white/5 hover:text-white",
+                                    type === 'transfer'
+                                        ? "bg-blue-500 hover:bg-blue-600 text-white border-transparent"
+                                        : "bg-slate-800 text-slate-400"
+                                )}
                                 onClick={() => setType('transfer')}
                             >
-                                <ArrowRightLeft size={20} />
-                                <span>Transfer</span>
-                            </button>
+                                <ArrowRightLeft size={18} />
+                                <span className="text-xs">Transfer</span>
+                            </Button>
                         </div>
                     </div>
 
-                    <div className="form-group">
-                        <label>Amount</label>
-                        <div className="input-wrapper">
-                            <span className="currency-symbol-prefix">₱</span>
-                            <input
+                    <div className="space-y-2">
+                        <Label htmlFor="amount" className="text-slate-300">Amount</Label>
+                        <div className="relative">
+                            <span className="absolute left-3 top-2.5 text-slate-400 text-sm">₱</span>
+                            <Input
+                                id="amount"
                                 type="number"
                                 step="0.01"
-                                className="styled-input"
+                                className="pl-7 bg-slate-800 border-white/10 text-white"
                                 autoFocus
                                 value={amount}
                                 onChange={(e) => setAmount(e.target.value)}
@@ -123,16 +147,14 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({ onClose, edi
                         </div>
                     </div>
 
-                    <div className="form-grid-2">
-                        <div className="form-group">
-                            <label>
-                                <div className="label-with-icon">
-                                    <Wallet size={16} />
-                                    <span>Account</span>
-                                </div>
-                            </label>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="account" className="flex items-center gap-1.5 text-slate-300">
+                                <Wallet size={14} /> Account
+                            </Label>
                             <select
-                                className="styled-input"
+                                id="account"
+                                className="flex h-9 w-full rounded-md border border-white/10 bg-slate-800 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 text-white"
                                 value={accountId}
                                 onChange={(e) => setAccountId(e.target.value)}
                                 required
@@ -145,15 +167,13 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({ onClose, edi
                         </div>
 
                         {type === 'transfer' ? (
-                            <div className="form-group">
-                                <label>
-                                    <div className="label-with-icon">
-                                        <ArrowRightLeft size={16} />
-                                        <span>To Account</span>
-                                    </div>
-                                </label>
+                            <div className="space-y-2">
+                                <Label htmlFor="toAccount" className="flex items-center gap-1.5 text-slate-300">
+                                    <ArrowRightLeft size={14} /> To Account
+                                </Label>
                                 <select
-                                    className="styled-input"
+                                    id="toAccount"
+                                    className="flex h-9 w-full rounded-md border border-white/10 bg-slate-800 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 text-white"
                                     value={transferToAccountId}
                                     onChange={(e) => setTransferToAccountId(e.target.value)}
                                     required
@@ -165,15 +185,13 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({ onClose, edi
                                 </select>
                             </div>
                         ) : (
-                            <div className="form-group">
-                                <label>
-                                    <div className="label-with-icon">
-                                        <Tag size={16} />
-                                        <span>Category</span>
-                                    </div>
-                                </label>
+                            <div className="space-y-2">
+                                <Label htmlFor="category" className="flex items-center gap-1.5 text-slate-300">
+                                    <Tag size={14} /> Category
+                                </Label>
                                 <select
-                                    className="styled-input"
+                                    id="category"
+                                    className="flex h-9 w-full rounded-md border border-white/10 bg-slate-800 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 text-white"
                                     value={categoryId}
                                     onChange={(e) => setCategoryId(e.target.value)}
                                     required
@@ -187,55 +205,53 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({ onClose, edi
                         )}
                     </div>
 
-                    <div className="form-group">
-                        <label>
-                            <div className="label-with-icon">
-                                <Calendar size={16} />
-                                <span>Date</span>
-                            </div>
-                        </label>
-                        <input
+                    <div className="space-y-2">
+                        <Label htmlFor="date" className="flex items-center gap-1.5 text-slate-300">
+                            <Calendar size={14} /> Date
+                        </Label>
+                        <Input
+                            id="date"
                             type="date"
-                            className="styled-input"
+                            className="bg-slate-800 border-white/10 text-white"
                             value={date}
                             onChange={(e) => setDate(e.target.value)}
                             required
                         />
                     </div>
 
-                    <div className="form-group">
-                        <label>
-                            <div className="label-with-icon">
-                                <MessageSquare size={16} />
-                                <span>Note</span>
-                            </div>
-                        </label>
-                        <input
+                    <div className="space-y-2">
+                        <Label htmlFor="note" className="flex items-center gap-1.5 text-slate-300">
+                            <MessageSquare size={14} /> Note
+                        </Label>
+                        <Input
+                            id="note"
                             type="text"
-                            className="styled-input"
+                            className="bg-slate-800 border-white/10 text-white"
                             value={note}
                             onChange={(e) => setNote(e.target.value)}
                             placeholder="What was this for?"
                         />
                     </div>
 
-                    <div className="modal-actions">
-                        <button type="button" className="btn-modal-cancel" onClick={onClose}>
+                    <DialogFooter className="pt-2">
+                        <Button type="button" variant="ghost" onClick={onClose} className="text-slate-400 hover:text-white hover:bg-white/10">
                             Cancel
-                        </button>
-                        <button type="submit" className={`btn-modal-submit ${isSaving ? 'btn-loading' : ''}`} disabled={isSaving}>
-                            {isSaving ? (
-                                <>
-                                    <div className="spinner" />
-                                    <span>Saving...</span>
-                                </>
-                            ) : (
-                                editingTransaction ? 'Update Transaction' : 'Save Transaction'
+                        </Button>
+                        <Button
+                            type="submit"
+                            disabled={isSaving}
+                            className={cn(
+                                "text-white min-w-[120px]",
+                                type === 'expense' && "bg-rose-500 hover:bg-rose-600",
+                                type === 'income' && "bg-emerald-500 hover:bg-emerald-600",
+                                type === 'transfer' && "bg-blue-500 hover:bg-blue-600"
                             )}
-                        </button>
-                    </div>
+                        >
+                            {isSaving ? 'Saving...' : (editingTransaction ? 'Update' : 'Save')}
+                        </Button>
+                    </DialogFooter>
                 </form>
-            </div>
-        </div>
+            </DialogContent>
+        </Dialog>
     );
 };

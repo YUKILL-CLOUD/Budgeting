@@ -5,6 +5,9 @@ import { useCategoryStore } from '../stores/categoryStore';
 import { format, isToday, isYesterday } from 'date-fns';
 import { ShoppingCart, Utensils, Home, Car, Heart, Zap, Gift, Briefcase, PlusCircle, ArrowRightLeft, Search, Filter, Tag, Edit2, Trash2 } from 'lucide-react';
 import type { Transaction } from '../lib/db';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 interface TransactionHistoryProps {
     onManageCategories?: () => void;
@@ -68,83 +71,103 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ onManage
     };
 
     return (
-        <div className="transaction-history">
+        <div className="space-y-4">
             {!limit && (
-                <div className="history-header">
-                    <div className="search-bar">
-                        <Search size={18} />
-                        <input
+                <div className="flex items-center gap-3 p-1">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+                        <Input
                             type="text"
                             placeholder="Search records..."
+                            className="pl-9 bg-slate-800 border-white/10 text-white"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
                     {onManageCategories && (
-                        <button className="btn-filter" onClick={onManageCategories}>
-                            <Tag size={18} />
-                            <span>Categories</span>
-                        </button>
+                        <Button variant="outline" size="sm" onClick={onManageCategories} className="border-white/10 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white">
+                            <Tag className="mr-2 h-4 w-4" />
+                            Categories
+                        </Button>
                     )}
-                    <button className="btn-filter">
-                        <Filter size={18} />
-                        <span>Filter</span>
-                    </button>
+                    <Button variant="outline" size="sm" className="border-white/10 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white">
+                        <Filter className="mr-2 h-4 w-4" />
+                        Filter
+                    </Button>
                 </div>
             )}
 
             {loading ? (
-                <div className="loading">Loading transactions...</div>
+                <div className="text-center py-8 text-slate-400">Loading transactions...</div>
             ) : sortedDates.length === 0 ? (
-                <div className="empty-state">
-                    <Zap size={48} />
-                    <p>No transactions found</p>
-                    <span>Add some to see your history!</span>
+                <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                    <Zap className="h-12 w-12 mb-4 opacity-50" />
+                    <p className="text-lg font-medium text-white">No transactions found</p>
+                    <span className="text-sm">Add some to see your history!</span>
                 </div>
             ) : (
-                <div className="history-list">
+                <div className="space-y-6">
                     {sortedDates.map(date => (
-                        <div key={date} className="date-group">
-                            <div className="date-label">{getDateLabel(date)}</div>
-                            <div className="transactions-list">
+                        <div key={date} className="space-y-3">
+                            <h3 className="text-sm font-medium text-slate-400 px-1">{getDateLabel(date)}</h3>
+                            <div className="space-y-2">
                                 {groupedTransactions[date].map(t => {
                                     const category = getCategory(t.categoryId);
                                     const Icon = category ? (iconMap[category.icon] || ShoppingCart) : ArrowRightLeft;
                                     const accountName = getAccountName(t.accountId);
                                     const toAccountName = t.transferToAccountId ? getAccountName(t.transferToAccountId) : null;
+                                    const isIncome = t.type === 'income';
+                                    const isTransfer = t.type === 'transfer';
 
                                     return (
-                                        <div key={t.id} className="transaction-item">
-                                            <div className="transaction-icon" style={{ color: category?.color || '#94a3b8' }}>
-                                                <Icon size={20} />
+                                        <div key={t.id} className="group flex items-center gap-4 p-3 rounded-xl bg-slate-800/50 hover:bg-slate-800 border border-white/5 transition-colors">
+                                            <div
+                                                className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-900/50 border border-white/5"
+                                                style={{ color: category?.color || '#94a3b8' }}
+                                            >
+                                                <Icon size={18} />
                                             </div>
-                                            <div className="transaction-info">
-                                                <div className="transaction-main">
-                                                    <span className="transaction-category">
-                                                        {t.type === 'transfer' ? `Transfer: ${accountName} → ${toAccountName}` : category?.name || 'Uncategorized'}
+
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center justify-between mb-0.5">
+                                                    <span className="font-medium text-white truncate pr-2">
+                                                        {isTransfer ? `Transfer: ${accountName} → ${toAccountName}` : category?.name || 'Uncategorized'}
                                                     </span>
-                                                    <span className={`transaction-amount ${t.type}`}>
-                                                        {t.type === 'income' ? '+' : '-'} ₱{t.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                    <span className={cn(
+                                                        "font-semibold whitespace-nowrap",
+                                                        isIncome ? "text-emerald-400" : isTransfer ? "text-slate-200" : "text-white"
+                                                    )}>
+                                                        {isIncome ? '+' : '-'} ₱{t.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                     </span>
                                                 </div>
-                                                <div className="transaction-sub">
-                                                    <span className="transaction-account">{t.type === 'transfer' ? 'Transfer' : accountName}</span>
-                                                    {t.note && <span className="transaction-note">• {t.note}</span>}
+                                                <div className="flex items-center justify-between text-xs text-slate-400">
+                                                    <div className="flex items-center gap-2 truncate">
+                                                        <span>{isTransfer ? 'Transfer' : accountName}</span>
+                                                        {t.note && (
+                                                            <>
+                                                                <span>•</span>
+                                                                <span className="truncate">{t.note}</span>
+                                                            </>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
+
                                             {!limit && (
-                                                <div className="transaction-actions">
+                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                     {onEditTransaction && (
-                                                        <button className="btn-icon-sm" onClick={() => onEditTransaction(t)}>
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white hover:bg-white/10" onClick={() => onEditTransaction(t)}>
                                                             <Edit2 size={14} />
-                                                        </button>
+                                                        </Button>
                                                     )}
-                                                    <button
-                                                        className="btn-icon-sm delete"
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-slate-400 hover:text-rose-400 hover:bg-rose-400/10"
                                                         onClick={() => t.id && confirm('Delete this transaction?') && deleteTransaction(t.id)}
                                                     >
                                                         <Trash2 size={14} />
-                                                    </button>
+                                                    </Button>
                                                 </div>
                                             )}
                                         </div>

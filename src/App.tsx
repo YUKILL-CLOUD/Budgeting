@@ -109,9 +109,13 @@ function App() {
       case 'reports':
         return (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <BudgetSummary />
-              <BudgetChart />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <BudgetSummary />
+              </div>
+              <div className="lg:col-span-1">
+                <BudgetChart />
+              </div>
             </div>
             <div className="card">
               <div className="flex justify-between items-center mb-6">

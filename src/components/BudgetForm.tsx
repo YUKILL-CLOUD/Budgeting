@@ -1,10 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Trash2, Trophy, Check, Edit2, Receipt, MoreVertical, DollarSign } from 'lucide-react';
+import { Plus, Trash2, Trophy, Edit2, Receipt, MoreVertical, DollarSign } from 'lucide-react';
 import { useGoalStore } from '../stores/goalStore';
 import { useAccountStore } from '../stores/accountStore';
 import { useObligationStore } from '../stores/obligationStore';
 import { ContributeModal } from './ContributeModal';
 import { toast } from 'sonner';
+import { Button } from "@/components/ui/button"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
 
 export const BudgetForm: React.FC = () => {
     const { goals, addGoal, updateGoal, deleteGoal, fetchGoals, fundGoal } = useGoalStore();
@@ -26,7 +36,6 @@ export const BudgetForm: React.FC = () => {
     const [targetAmount, setTargetAmount] = useState('');
     const [monthlyPlan, setMonthlyPlan] = useState('');
     const [accountId, setAccountId] = useState<string>('');
-    const [refreshType, setRefreshType] = useState<'none' | 'monthly'>('none');
     const [priority, setPriority] = useState<'high' | 'medium' | 'low'>('medium');
     const [currentAmount, setCurrentAmount] = useState('');
     const [deadline, setDeadline] = useState(new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]);
@@ -57,7 +66,6 @@ export const BudgetForm: React.FC = () => {
         setTargetAmount('');
         setMonthlyPlan('');
         setAccountId('');
-        setRefreshType('none');
         setPriority('medium');
         setCurrentAmount('');
         setDeadline(new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]);
@@ -144,7 +152,6 @@ export const BudgetForm: React.FC = () => {
             setTargetAmount(item.targetAmount.toString());
             setMonthlyPlan(item.monthlyPlan?.toString() || '');
             setAccountId(item.accountId?.toString() || '');
-            setRefreshType(item.refreshType);
             setCurrentAmount(item.currentAmount?.toString() || '0');
             if (item.deadline) {
                 setDeadline(new Date(item.deadline).toISOString().split('T')[0]);
@@ -168,8 +175,9 @@ export const BudgetForm: React.FC = () => {
 
             <div className="budget-form-container">
                 {/* SAVINGS SECTION */}
+                {/* SAVINGS SECTION */}
                 <section className="card card-savings">
-                    <div className="card-header border-gold">
+                    <div className="flex items-center justify-between p-4 border-b border-white/5">
                         <div className="header-title-group">
                             <Trophy style={{ color: '#fbbf24' }} size={24} />
                             <div>
@@ -177,75 +185,109 @@ export const BudgetForm: React.FC = () => {
                                 <p className="subtitle">Long-term goals & Wishlist</p>
                             </div>
                         </div>
+                        <Dialog open={!!editingGoalId || (isSavingGoal && !editingGoalId) ? true : undefined} onOpenChange={(open) => {
+                            if (!open) resetForm();
+                        }}>
+                            <DialogTrigger asChild>
+                                <Button className="bg-yellow-500 hover:bg-yellow-600 text-white border-0">
+                                    <Plus className="mr-2 h-4 w-4" /> Add Goal
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[425px] bg-[#1e293b] border-white/10 text-white">
+                                <DialogHeader>
+                                    <DialogTitle>{editingGoalId ? 'Edit Savings Goal' : 'Add New Savings Target'}</DialogTitle>
+                                    <DialogDescription className="text-slate-400">
+                                        Set a financial goal to track your progress.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <form onSubmit={handleSaveGoal} className="grid gap-4 py-4">
+                                    <div className="grid grid-cols-4 items-center gap-4">
+                                        <label htmlFor="name" className="text-right text-sm font-medium text-slate-300">
+                                            Name
+                                        </label>
+                                        <input
+                                            id="name"
+                                            value={name}
+                                            onChange={(e) => setName(e.target.value)}
+                                            className="col-span-3 flex h-9 w-full rounded-md border border-white/10 bg-slate-800 px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-yellow-500 disabled:cursor-not-allowed disabled:opacity-50 text-white"
+                                            placeholder="e.g. New Laptop"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-4 items-center gap-4">
+                                        <label htmlFor="target" className="text-right text-sm font-medium text-slate-300">
+                                            Target
+                                        </label>
+                                        <div className="col-span-3 relative">
+                                            <span className="absolute left-3 top-2.5 text-slate-400 text-xs">₱</span>
+                                            <input
+                                                id="target"
+                                                type="number"
+                                                value={targetAmount}
+                                                onChange={(e) => setTargetAmount(e.target.value)}
+                                                className="flex h-9 w-full rounded-md border border-white/10 bg-slate-800 pl-7 pr-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-yellow-500 text-white"
+                                                placeholder="0.00"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-4 items-center gap-4">
+                                        <label className="text-right text-sm font-medium text-slate-300">
+                                            Priority
+                                        </label>
+                                        <select
+                                            value={priority}
+                                            onChange={(e) => setPriority(e.target.value as any)}
+                                            className="col-span-3 flex h-9 w-full rounded-md border border-white/10 bg-slate-800 px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-yellow-500 text-white"
+                                        >
+                                            <option value="high">High</option>
+                                            <option value="medium">Medium</option>
+                                            <option value="low">Low</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="grid grid-cols-4 items-center gap-4">
+                                        <label className="text-right text-sm font-medium text-slate-300">
+                                            Account
+                                        </label>
+                                        <select
+                                            value={accountId}
+                                            onChange={(e) => setAccountId(e.target.value)}
+                                            className="col-span-3 flex h-9 w-full rounded-md border border-white/10 bg-slate-800 px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-yellow-500 text-white"
+                                        >
+                                            <option value="">None</option>
+                                            {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
+                                        </select>
+                                    </div>
+
+                                    {!editingGoalId && (
+                                        <div className="grid grid-cols-4 items-center gap-4">
+                                            <label htmlFor="start" className="text-right text-sm font-medium text-slate-300">
+                                                Start Bal
+                                            </label>
+                                            <div className="col-span-3 relative">
+                                                <span className="absolute left-3 top-2.5 text-slate-400 text-xs">₱</span>
+                                                <input
+                                                    id="start"
+                                                    type="number"
+                                                    value={currentAmount}
+                                                    onChange={(e) => setCurrentAmount(e.target.value)}
+                                                    className="flex h-9 w-full rounded-md border border-white/10 bg-slate-800 pl-7 pr-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-yellow-500 text-white"
+                                                    placeholder="Optional starting amount"
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <DialogFooter>
+                                        <Button type="submit" disabled={isSavingGoal} className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white border-0 w-full sm:w-auto">
+                                            {isSavingGoal ? 'Saving...' : (editingGoalId ? 'Update Goal' : 'Create Goal')}
+                                        </Button>
+                                    </DialogFooter>
+                                </form>
+                            </DialogContent>
+                        </Dialog>
                     </div>
-
-                    <form onSubmit={handleSaveGoal} className="goal-blueprint-form">
-                        <div className="form-row">
-                            <div className="form-group flex-2">
-                                <label className="field-label">Goal Name</label>
-                                <input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. New Laptop" required />
-                            </div>
-                            <div className="form-group">
-                                <label className="field-label">Target Amount</label>
-                                <div className="input-wrapper">
-                                    <span className="currency-prefix">₱</span>
-                                    <input type="number" value={targetAmount} onChange={e => setTargetAmount(e.target.value)} placeholder="0.00" required />
-                                </div>
-                            </div>
-                        </div>
-                        <div className="form-row">
-                            <div className="form-group">
-                                <label className="field-label">Monthly Savings Plan</label>
-                                <div className="input-wrapper">
-                                    <span className="currency-prefix">₱</span>
-                                    <input type="number" value={monthlyPlan} onChange={e => setMonthlyPlan(e.target.value)} placeholder="Amount to save/mo" />
-                                </div>
-                            </div>
-                            <div className="form-group">
-                                <label className="field-label">Linked Account</label>
-                                <select value={accountId} onChange={e => setAccountId(e.target.value)} className="styled-select-gold">
-                                    <option value="">None</option>
-                                    {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
-                                </select>
-                            </div>
-                        </div>
-
-                        <div className="form-row">
-                            <div className="form-group">
-                                <label className="field-label">Starting Balance</label>
-                                <div className="input-wrapper">
-                                    <span className="currency-prefix">₱</span>
-                                    <input type="number" value={currentAmount} onChange={e => setCurrentAmount(e.target.value)} placeholder="0.00" />
-                                </div>
-                            </div>
-                            <div className="form-group">
-                                <label className="field-label">Target Date</label>
-                                <input type="date" value={deadline} onChange={e => setDeadline(e.target.value)} className="styled-input-dark" />
-                            </div>
-                            <div className="form-group">
-                                <label className="field-label">Priority</label>
-                                <select value={priority} onChange={e => setPriority(e.target.value as any)} className="styled-select-gold">
-                                    <option value="high">High</option>
-                                    <option value="medium">Medium</option>
-                                    <option value="low">Low</option>
-                                </select>
-                            </div>
-                        </div>
-                        {/* Hidden details for savings */}
-                        <input type="hidden" value={refreshType} />
-
-                        <div className="form-footer">
-                            <button type="submit" className={`btn-blueprint-submit ${isSavingGoal ? 'btn-loading' : ''}`} disabled={isSavingGoal} onClick={() => setRefreshType('none')}>
-                                {isSavingGoal ? (
-                                    <div className="spinner" />
-                                ) : (
-                                    editingGoalId ? <Check size={18} /> : <Plus size={18} />
-                                )}
-                                <span>{isSavingGoal ? 'Saving...' : (editingGoalId ? 'Update Savings Goal' : 'Add Savings Goal')}</span>
-                            </button>
-                            {editingGoalId && <button type="button" onClick={resetForm} className="btn-text-sm danger">Cancel</button>}
-                        </div>
-                    </form>
 
                     <div className="goals-planner-list">
                         {savingsGoals.map(goal => {
@@ -314,8 +356,9 @@ export const BudgetForm: React.FC = () => {
                 </section>
 
                 {/* BILLS SECTION */}
+                {/* BILLS SECTION */}
                 <section className="card card-expenses">
-                    <div className="card-header border-pink">
+                    <div className="flex items-center justify-between p-4 border-b border-white/5">
                         <div className="header-title-group">
                             <Receipt className="text-pink" size={24} />
                             <div>
@@ -323,39 +366,89 @@ export const BudgetForm: React.FC = () => {
                                 <p className="subtitle">Recurring bills & Fixed costs</p>
                             </div>
                         </div>
-                    </div>
+                        <Dialog open={!!editingObligationId || (isSavingObligation && !editingObligationId) ? true : undefined} onOpenChange={(open) => {
+                            if (!open) resetForm();
+                        }}>
+                            <DialogTrigger asChild>
+                                <Button className="bg-pink-500 hover:bg-pink-600 text-white border-0">
+                                    <Plus className="mr-2 h-4 w-4" /> Add Bill
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[425px] bg-[#1e293b] border-white/10 text-white">
+                                <DialogHeader>
+                                    <DialogTitle>{editingObligationId ? 'Edit Obligation' : 'Add Monthly Bill'}</DialogTitle>
+                                    <DialogDescription className="text-slate-400">
+                                        Track your recurring expenses like rent or internet.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <form onSubmit={handleSaveObligation} className="grid gap-4 py-4">
+                                    <div className="grid grid-cols-4 items-center gap-4">
+                                        <label htmlFor="billName" className="text-right text-sm font-medium text-slate-300">
+                                            Name
+                                        </label>
+                                        <input
+                                            id="billName"
+                                            value={name}
+                                            onChange={(e) => setName(e.target.value)}
+                                            className="col-span-3 flex h-9 w-full rounded-md border border-white/10 bg-slate-800 px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pink-500 disabled:cursor-not-allowed disabled:opacity-50 text-white"
+                                            placeholder="e.g. Netflix"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-4 items-center gap-4">
+                                        <label htmlFor="billAmount" className="text-right text-sm font-medium text-slate-300">
+                                            Amount
+                                        </label>
+                                        <div className="col-span-3 relative">
+                                            <span className="absolute left-3 top-2.5 text-slate-400 text-xs">₱</span>
+                                            <input
+                                                id="billAmount"
+                                                type="number"
+                                                value={monthlyPlan}
+                                                onChange={(e) => setMonthlyPlan(e.target.value)}
+                                                className="flex h-9 w-full rounded-md border border-white/10 bg-slate-800 pl-7 pr-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pink-500 text-white"
+                                                placeholder="0.00"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-4 items-center gap-4">
+                                        <label className="text-right text-sm font-medium text-slate-300">
+                                            Frequency
+                                        </label>
+                                        <select
+                                            value={billFreq}
+                                            onChange={(e) => setBillFreq(e.target.value as any)}
+                                            className="col-span-3 flex h-9 w-full rounded-md border border-white/10 bg-slate-800 px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pink-500 text-white"
+                                        >
+                                            <option value="Monthly">Monthly</option>
+                                            <option value="Weekly">Weekly (Auto x4.33)</option>
+                                        </select>
+                                    </div>
+                                    <div className="grid grid-cols-4 items-center gap-4">
+                                        <label className="text-right text-sm font-medium text-slate-300">
+                                            Priority
+                                        </label>
+                                        <select
+                                            value={priority}
+                                            onChange={(e) => setPriority(e.target.value as any)}
+                                            className="col-span-3 flex h-9 w-full rounded-md border border-white/10 bg-slate-800 px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pink-500 text-white"
+                                        >
+                                            <option value="high">High (Must Pay)</option>
+                                            <option value="medium">Medium</option>
+                                            <option value="low">Low</option>
+                                        </select>
+                                    </div>
 
-                    <form onSubmit={handleSaveObligation} className="add-expense-blueprint">
-                        <div className="form-grid-blueprint">
-                            <input value={name} onChange={e => setName(e.target.value)} placeholder="Bill Name (e.g. Rent)" required />
-                            <div className="input-wrapper">
-                                <span className="currency-prefix">₱</span>
-                                <input type="number" value={monthlyPlan} onChange={e => setMonthlyPlan(e.target.value)} placeholder="Amount" required />
-                            </div>
-                            <select value={billFreq} onChange={e => setBillFreq(e.target.value as any)} className="styled-select-dark">
-                                <option value="Monthly">Monthly</option>
-                                <option value="Weekly">Weekly (Auto x4.33)</option>
-                            </select>
-                        </div>
-                        <div className="form-meta-blueprint">
-                            <div className="prio-select-group">
-                                <span className="prio-label">Priority:</span>
-                                <select value={priority} onChange={e => setPriority(e.target.value as any)} className="styled-select-dark">
-                                    <option value="high">High (Must Pay)</option>
-                                    <option value="medium">Medium</option>
-                                    <option value="low">Low</option>
-                                </select>
-                            </div>
-                            <button type="submit" className={`btn-add-blueprint ${isSavingObligation ? 'btn-loading' : ''}`} disabled={isSavingObligation}>
-                                {isSavingObligation ? (
-                                    <div className="spinner" />
-                                ) : (
-                                    <Plus size={16} />
-                                )}
-                                <span>{isSavingObligation ? 'Saving...' : (editingObligationId ? 'Update Obligation' : 'Add Obligation')}</span>
-                            </button>
-                        </div>
-                    </form>
+                                    <DialogFooter>
+                                        <Button type="submit" disabled={isSavingObligation} className="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white border-0 w-full sm:w-auto">
+                                            {isSavingObligation ? 'Saving...' : (editingObligationId ? 'Update Bill' : 'Add Bill')}
+                                        </Button>
+                                    </DialogFooter>
+                                </form>
+                            </DialogContent>
+                        </Dialog>
+                    </div>
 
                     <div className="blueprint-list">
                         {monthlyObligations.map(ob => (

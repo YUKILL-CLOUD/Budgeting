@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
-import { X, Building2, Wallet, PiggyBank, Banknote, CreditCard } from 'lucide-react';
+import { Building2, Wallet, PiggyBank, Banknote, CreditCard } from 'lucide-react';
 import { useAccountStore } from '../stores/accountStore';
 import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 interface AddAccountModalProps {
     onClose: () => void;
@@ -63,54 +68,49 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({ onClose }) => 
     };
 
     return (
-        <div className="modal-overlay" onClick={onClose}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                <div className="modal-header">
-                    <div className="header-with-subtitle">
-                        <h2>New Account</h2>
-                        <p className="subtitle">Track a new financial source</p>
-                    </div>
-                    <button className="btn-icon" onClick={onClose}>
-                        <X size={20} />
-                    </button>
-                </div>
+        <Dialog open={true} onOpenChange={onClose}>
+            <DialogContent className="sm:max-w-[500px] bg-[#1e293b] border-white/10 text-white">
+                <DialogHeader>
+                    <DialogTitle>New Account</DialogTitle>
+                    <DialogDescription className="text-slate-400">
+                        Track a new financial source
+                    </DialogDescription>
+                </DialogHeader>
 
-                <form onSubmit={handleSubmit} className="contribute-form">
-                    <div className="form-group">
-                        <label className="field-label caps">Account Name</label>
-                        <input
-                            type="text"
-                            className="styled-input"
-                            style={{ paddingLeft: '1rem' }}
+                <form onSubmit={handleSubmit} className="space-y-6 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="name" className="text-slate-300">Account Name</Label>
+                        <Input
+                            id="name"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             placeholder="e.g. BPI Savings, Pocket Cash"
-                            required
+                            className="bg-slate-800 border-white/10 text-white"
                             autoFocus
                         />
                     </div>
 
-                    <div className="form-grid-2">
-                        <div className="form-group">
-                            <label className="field-label caps">Initial Balance</label>
-                            <div className="input-wrapper">
-                                <span className="currency-symbol-prefix">₱</span>
-                                <input
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="balance" className="text-slate-300">Initial Balance</Label>
+                            <div className="relative">
+                                <span className="absolute left-3 top-2.5 text-slate-400 text-sm">₱</span>
+                                <Input
+                                    id="balance"
                                     type="number"
                                     step="0.01"
-                                    className="styled-input"
                                     value={balance}
                                     onChange={(e) => setBalance(e.target.value)}
                                     placeholder="0.00"
-                                    required
+                                    className="pl-7 bg-slate-800 border-white/10 text-white"
                                 />
                             </div>
                         </div>
-                        <div className="form-group">
-                            <label className="field-label caps">Account Type</label>
+                        <div className="space-y-2">
+                            <Label htmlFor="type" className="text-slate-300">Account Type</Label>
                             <select
-                                className="styled-input"
-                                style={{ paddingLeft: '1rem' }}
+                                id="type"
+                                className="flex h-9 w-full rounded-md border border-white/10 bg-slate-800 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 text-white"
                                 value={type}
                                 onChange={(e) => setType(e.target.value as any)}
                             >
@@ -122,49 +122,54 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({ onClose }) => 
                         </div>
                     </div>
 
-                    <div className="form-group">
-                        <label className="field-label caps">Icon & Aesthetic</label>
-                        <div className="color-grid" style={{ marginBottom: '1rem' }}>
+                    <div className="space-y-4">
+                        <Label className="text-slate-300">Icon & Aesthetic</Label>
+
+                        <div className="grid grid-cols-8 gap-2">
                             {accountColors.map((color) => (
-                                <div
+                                <button
                                     key={color}
-                                    className={`color-swatch ${selectedColor === color ? 'active' : ''}`}
+                                    type="button"
+                                    className={cn(
+                                        "w-8 h-8 rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900",
+                                        selectedColor === color ? "ring-2 ring-white scale-110" : "hover:scale-110"
+                                    )}
                                     style={{ backgroundColor: color }}
                                     onClick={() => setSelectedColor(color)}
                                 />
                             ))}
                         </div>
-                        <div className="mode-selector">
+
+                        <div className="flex gap-2 p-1 bg-slate-900/50 rounded-lg overflow-x-auto">
                             {accountIcons.map(({ name: iconName, icon: Icon }) => (
                                 <button
                                     key={iconName}
                                     type="button"
-                                    className={`mode-btn ${selectedIcon === iconName ? 'active' : ''}`}
+                                    className={cn(
+                                        "p-2 rounded-md transition-all flex flex-col items-center gap-1 min-w-[60px]",
+                                        selectedIcon === iconName
+                                            ? "bg-indigo-500/20 text-indigo-400 border border-indigo-500/50"
+                                            : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
+                                    )}
                                     onClick={() => setSelectedIcon(iconName)}
                                 >
                                     <Icon size={20} />
+                                    <span className="text-[10px] font-medium">{iconName}</span>
                                 </button>
                             ))}
                         </div>
                     </div>
 
-                    <div className="modal-actions" style={{ marginTop: '1rem' }}>
-                        <button type="button" className="btn-modal-cancel" onClick={onClose}>
+                    <DialogFooter>
+                        <Button type="button" variant="ghost" onClick={onClose} className="text-slate-400 hover:text-white hover:bg-white/10">
                             Cancel
-                        </button>
-                        <button type="submit" className={`btn-modal-submit ${isSaving ? 'btn-loading' : ''}`} disabled={isSaving}>
-                            {isSaving ? (
-                                <>
-                                    <div className="spinner" />
-                                    <span>Creating...</span>
-                                </>
-                            ) : (
-                                'Create Account'
-                            )}
-                        </button>
-                    </div>
+                        </Button>
+                        <Button type="submit" disabled={isSaving} className="bg-indigo-500 hover:bg-indigo-600 text-white">
+                            {isSaving ? 'Creating...' : 'Create Account'}
+                        </Button>
+                    </DialogFooter>
                 </form>
-            </div>
-        </div>
+            </DialogContent>
+        </Dialog>
     );
 };

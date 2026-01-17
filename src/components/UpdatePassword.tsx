@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { Lock, ArrowRight, KeyRound } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 
 export const UpdatePassword: React.FC = () => {
     const [password, setPassword] = useState('');
@@ -46,36 +50,46 @@ export const UpdatePassword: React.FC = () => {
     };
 
     return (
-        <div className="auth-container">
-            <div className="auth-card">
-                <div className="auth-icon-box">
-                    <KeyRound size={32} />
-                </div>
-                <h2>Set New Password</h2>
-                <p className="subtitle">Enter your new password below.</p>
-
-                <form onSubmit={handleUpdate} className="auth-form">
-                    <div className="input-group-auth">
-                        <label>New Password</label>
-                        <div className="input-wrapper-auth">
-                            <Lock size={18} className="input-icon" />
-                            <input
-                                type="password"
-                                placeholder="••••••••"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                disabled={loading}
-                                required
-                            />
-                        </div>
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 p-4">
+            <Card className="w-full max-w-md bg-[#1e293b] border-white/10 shadow-2xl">
+                <CardHeader className="text-center space-y-4 pb-6">
+                    <div className="mx-auto w-16 h-16 bg-indigo-500/20 rounded-full flex items-center justify-center">
+                        <KeyRound className="text-indigo-400" size={32} />
                     </div>
+                    <CardTitle className="text-2xl text-white">Set New Password</CardTitle>
+                    <CardDescription className="text-slate-400">Enter your new password below.</CardDescription>
+                </CardHeader>
 
-                    <button type="submit" disabled={loading} className="btn-auth-submit">
-                        {loading ? 'Updating...' : 'Update Password'}
-                        {!loading && <ArrowRight size={18} />}
-                    </button>
-                </form>
-            </div>
+                <CardContent>
+                    <form onSubmit={handleUpdate} className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="password" className="text-slate-300">New Password</Label>
+                            <div className="relative">
+                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                                <Input
+                                    id="password"
+                                    type="password"
+                                    placeholder="••••••••"
+                                    className="pl-10 bg-slate-800 border-white/10 text-white placeholder:text-slate-500"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    disabled={loading}
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        <Button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white font-bold py-6 text-base shadow-lg"
+                        >
+                            {loading ? 'Updating...' : 'Update Password'}
+                            {!loading && <ArrowRight className="ml-2" size={18} />}
+                        </Button>
+                    </form>
+                </CardContent>
+            </Card>
         </div>
     );
 };

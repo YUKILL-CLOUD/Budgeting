@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
-import { X, Plus, Trash2, Edit2, Tag, Check } from 'lucide-react';
+import { Plus, Trash2, Edit2, Tag, Check } from 'lucide-react';
 import { useCategoryStore } from '../stores/categoryStore';
 import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 interface CategoryManagerProps {
     onClose: () => void;
@@ -80,118 +85,137 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({ onClose, isOpe
     };
 
     return (
-        <div className="modal-overlay" onClick={onClose}>
-            <div className="modal-content category-manager-modal" onClick={e => e.stopPropagation()}>
-                <div className="modal-header">
-                    <div className="header-title-group">
-                        <Tag className="accent-icon" size={24} />
-                        <div>
-                            <h2>Manage Categories</h2>
-                            <p className="subtitle">Organize your spending & income</p>
-                        </div>
-                    </div>
-                    <button className="btn-icon" onClick={onClose}>
-                        <X size={20} />
-                    </button>
-                </div>
+        <Dialog open={true} onOpenChange={onClose}>
+            <DialogContent className="sm:max-w-[500px] bg-[#1e293b] border-white/10 text-white flex flex-col max-h-[85vh]">
+                <DialogHeader className="flex-none">
+                    <DialogTitle className="flex items-center gap-2">
+                        <Tag className="text-indigo-500" size={20} />
+                        Manage Categories
+                    </DialogTitle>
+                    <DialogDescription className="text-slate-400">
+                        Organize your spending & income types
+                    </DialogDescription>
+                </DialogHeader>
 
-                <div className="category-tabs">
+                <div className="flex-none flex items-center bg-slate-800/50 p-1 rounded-lg border border-white/5 mb-2">
                     <button
-                        className={`cat-tab ${activeTab === 'expense' ? 'active' : ''}`}
+                        className={cn(
+                            "flex-1 py-1.5 text-sm font-medium rounded-md transition-all",
+                            activeTab === 'expense' ? "bg-indigo-500 text-white shadow-sm" : "text-slate-400 hover:text-white hover:bg-white/5"
+                        )}
                         onClick={() => { setActiveTab('expense'); resetForm(); }}
                     >
                         Expenses
                     </button>
                     <button
-                        className={`cat-tab ${activeTab === 'income' ? 'active' : ''}`}
+                        className={cn(
+                            "flex-1 py-1.5 text-sm font-medium rounded-md transition-all",
+                            activeTab === 'income' ? "bg-emerald-500 text-white shadow-sm" : "text-slate-400 hover:text-white hover:bg-white/5"
+                        )}
                         onClick={() => { setActiveTab('income'); resetForm(); }}
                     >
                         Income
                     </button>
                 </div>
 
-                {isAdding ? (
-                    <form onSubmit={handleSubmit} className="category-form">
-                        <div className="form-group">
-                            <label>Category Name</label>
-                            <input
-                                type="text"
-                                className="styled-input"
-                                value={name}
-                                onChange={e => setName(e.target.value)}
-                                placeholder="e.g. Groceries"
-                                autoFocus
-                                required
-                            />
-                        </div>
+                <div className="flex-1 overflow-y-auto min-h-0 pr-1">
+                    {isAdding ? (
+                        <form onSubmit={handleSubmit} className="space-y-4 py-2">
+                            <div className="space-y-2">
+                                <Label htmlFor="categoryName" className="text-slate-300">Category Name</Label>
+                                <Input
+                                    id="categoryName"
+                                    type="text"
+                                    className="bg-slate-800 border-white/10 text-white"
+                                    value={name}
+                                    onChange={e => setName(e.target.value)}
+                                    placeholder="e.g. Groceries"
+                                    autoFocus
+                                    required
+                                />
+                            </div>
 
-                        <div className="form-group">
-                            <label>Color</label>
-                            <div className="color-grid">
-                                {colors.map(c => (
-                                    <button
-                                        key={c}
-                                        type="button"
-                                        className={`color-swatch ${color === c ? 'active' : ''}`}
-                                        style={{ backgroundColor: c }}
-                                        onClick={() => setColor(c)}
-                                    >
-                                        {color === c && <Check size={14} />}
-                                    </button>
+                            <div className="space-y-2">
+                                <Label className="text-slate-300">Color Tag</Label>
+                                <div className="grid grid-cols-6 gap-2">
+                                    {colors.map(c => (
+                                        <button
+                                            key={c}
+                                            type="button"
+                                            className={cn(
+                                                "w-8 h-8 rounded-full flex items-center justify-center transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 border border-white/10",
+                                                color === c ? "scale-110 ring-2 ring-white" : "hover:scale-110 opacity-80 hover:opacity-100"
+                                            )}
+                                            style={{ backgroundColor: c }}
+                                            onClick={() => setColor(c)}
+                                        >
+                                            {color === c && <Check size={14} className="text-white drop-shadow-md" />}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="flex justify-end gap-3 pt-4">
+                                <Button type="button" variant="ghost" onClick={resetForm} className="text-slate-400 hover:text-white hover:bg-white/10">
+                                    Cancel
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    disabled={isSaving}
+                                    className={cn(
+                                        "text-white min-w-[120px]",
+                                        activeTab === 'expense' ? "bg-indigo-500 hover:bg-indigo-600" : "bg-emerald-500 hover:bg-emerald-600"
+                                    )}
+                                >
+                                    {isSaving ? 'Saving...' : (editingId ? 'Update' : 'Create')}
+                                </Button>
+                            </div>
+                        </form>
+                    ) : (
+                        <div className="space-y-3">
+                            <Button
+                                className="w-full bg-slate-800 hover:bg-slate-700 text-white border border-white/10 border-dashed py-6"
+                                onClick={() => setIsAdding(true)}
+                            >
+                                <Plus size={18} className="mr-2" />
+                                Add New {activeTab === 'expense' ? 'Expense' : 'Income'} Category
+                            </Button>
+
+                            <div className="space-y-2">
+                                {filteredCategories.map(cat => (
+                                    <div key={cat.id} className="group flex items-center justify-between p-3 rounded-lg bg-slate-800/40 border border-white/5 hover:bg-slate-800 transition-colors">
+                                        <div className="flex items-center gap-3">
+                                            <div
+                                                className="w-4 h-4 rounded-full shadow-sm"
+                                                style={{ backgroundColor: cat.color }}
+                                            />
+                                            <span className="font-medium text-slate-200">{cat.name}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white hover:bg-white/10" onClick={() => handleEdit(cat)}>
+                                                <Edit2 size={14} />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 text-slate-400 hover:text-rose-400 hover:bg-rose-400/10"
+                                                onClick={() => cat.id && handleDelete(cat.id)}
+                                            >
+                                                <Trash2 size={14} />
+                                            </Button>
+                                        </div>
+                                    </div>
                                 ))}
+                                {filteredCategories.length === 0 && (
+                                    <div className="text-center py-8 text-slate-500 italic text-sm">
+                                        No categories found. Create one to get started!
+                                    </div>
+                                )}
                             </div>
                         </div>
-
-                        <div className="modal-actions">
-                            <button type="button" className="btn-modal-cancel" onClick={resetForm}>
-                                Cancel
-                            </button>
-                            <button type="submit" className={`btn-modal-submit ${isSaving ? 'btn-loading' : ''}`} disabled={isSaving}>
-                                {isSaving ? (
-                                    <>
-                                        <div className="spinner" />
-                                        <span>Saving...</span>
-                                    </>
-                                ) : (
-                                    editingId ? 'Update Category' : 'Create Category'
-                                )}
-                            </button>
-                        </div>
-                    </form>
-                ) : (
-                    <div className="category-list-container">
-                        <button className="btn-add-category" onClick={() => setIsAdding(true)}>
-                            <Plus size={18} />
-                            <span>Add New {activeTab === 'expense' ? 'Expense' : 'Income'} Category</span>
-                        </button>
-
-                        <div className="category-list">
-                            {filteredCategories.map(cat => (
-                                <div key={cat.id} className="category-item-row">
-                                    <div className="cat-info">
-                                        <div
-                                            className="cat-dot"
-                                            style={{ backgroundColor: cat.color }}
-                                        />
-                                        <span className="cat-name">{cat.name}</span>
-                                    </div>
-                                    <div className="cat-actions">
-                                        <button className="btn-cat-action" onClick={() => handleEdit(cat)}>
-                                            <Edit2 size={16} />
-                                        </button>
-                                        <button
-                                            className="btn-cat-action delete"
-                                            onClick={() => cat.id && handleDelete(cat.id)}
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-            </div>
-        </div>
+                    )}
+                </div>
+            </DialogContent>
+        </Dialog>
     );
 };

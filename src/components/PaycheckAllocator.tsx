@@ -2,6 +2,11 @@ import React, { useState } from 'react';
 import { PiggyBank, Wallet, Receipt, CheckCircle2, X } from 'lucide-react';
 import { useGoalStore } from '../stores/goalStore';
 import { useObligationStore } from '../stores/obligationStore';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 interface PaycheckAllocatorProps {
     isOpen?: boolean;
@@ -115,164 +120,220 @@ export const PaycheckAllocator: React.FC<PaycheckAllocatorProps> = ({ isOpen, on
     const savingsTargets = unifiedItems.filter(i => i.type === 'saving');
 
     const content = (
-        <div className="allocator-container">
+        <div className="space-y-6 max-w-7xl mx-auto p-1">
             {!isOpen && (
-                <div className="tab-page-header">
-                    <div className="header-with-icon">
-                        <div className="header-icon-pill">
-                            <Receipt size={24} />
-                        </div>
-                        <div>
-                            <h2 className="page-title">Paycheck Worksheet</h2>
-                            <p className="page-subtitle">Blueprint-driven allocation for this week's income</p>
-                        </div>
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 bg-indigo-500/10 rounded-lg">
+                        <Receipt className="text-indigo-400" size={24} />
+                    </div>
+                    <div>
+                        <h2 className="text-2xl font-bold tracking-tight text-white">Paycheck Worksheet</h2>
+                        <p className="text-sm text-slate-400">Blueprint-driven allocation for this week's income</p>
                     </div>
                 </div>
             )}
 
             {isOpen && (
-                <div className="modal-header">
-                    <div className="header-with-icon">
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2 text-white">
                         <Wallet size={24} />
-                        <h2>Paycheck Worksheet</h2>
+                        <h2 className="text-xl font-bold">Paycheck Worksheet</h2>
                     </div>
-                    <button onClick={onClose} className="btn-icon">
-                        <X size={24} />
-                    </button>
+                    {onClose && (
+                        <Button variant="ghost" size="icon" onClick={onClose} className="text-slate-400 hover:text-white">
+                            <X size={20} />
+                        </Button>
+                    )}
                 </div>
             )}
 
-            <div className="allocator-input-section waterfall-inputs">
-                <div className="input-row-main">
-                    <div className="input-group-main full-width">
-                        <label className="field-label white-text">Actual Weekly Income</label>
-                        <div className="input-wrapper massive">
-                            <span className="currency-symbol">₱</span>
-                            <input
-                                type="number"
-                                value={actualIncome || ''}
-                                onChange={(e) => setActualIncome(parseFloat(e.target.value) || 0)}
-                                placeholder="0"
-                            />
-                        </div>
+            {/* Inputs Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                <div className="bg-gradient-to-br from-indigo-900/50 to-slate-900/50 border border-indigo-500/30 rounded-xl p-6 shadow-lg">
+                    <label className="text-xs font-bold text-indigo-300 uppercase tracking-widest mb-3 block">Actual Weekly Income</label>
+                    <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl font-bold text-slate-500">₱</span>
+                        <Input
+                            type="number"
+                            className="pl-10 h-16 text-3xl font-bold bg-slate-950/50 border-indigo-500/30 focus-visible:ring-indigo-500 text-white"
+                            value={actualIncome || ''}
+                            onChange={(e) => setActualIncome(parseFloat(e.target.value) || 0)}
+                            placeholder="0"
+                        />
                     </div>
                 </div>
 
-                <div className="input-row-sub">
-                    <div className="input-group-sub">
-                        <label className="field-label gold-text">Pocket Spending Allowance</label>
-                        <div className="input-wrapper gold-border small-input">
-                            <span className="currency-symbol">₱</span>
-                            <input
-                                type="number"
-                                value={spendingAllowance || ''}
-                                onChange={(e) => setSpendingAllowance(parseFloat(e.target.value) || 0)}
-                                placeholder="0"
-                            />
-                        </div>
+                <div className="bg-slate-900/50 border border-amber-500/20 rounded-xl p-6 shadow-lg relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-20 h-20 bg-amber-500/10 rounded-bl-full pointer-events-none" />
+                    <label className="text-xs font-bold text-amber-500/80 uppercase tracking-widest mb-3 block">Pocket Spending Allowance</label>
+                    <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-slate-500">₱</span>
+                        <Input
+                            type="number"
+                            className="pl-8 h-12 text-xl font-bold bg-slate-950/50 border-amber-500/30 focus-visible:ring-amber-500 text-white"
+                            value={spendingAllowance || ''}
+                            onChange={(e) => setSpendingAllowance(parseFloat(e.target.value) || 0)}
+                            placeholder="0"
+                        />
                     </div>
                 </div>
             </div>
 
-            <div className={`bank-allocation-grid ${isOpen ? 'modal-grid' : 'multi-card-layout'}`}>
-                {/* 💳 Card 1: Bills & Loans */}
-                <div className="bank-card bills-card">
-                    <div className="bank-header">
-                        <Receipt size={18} className="icon-bills" />
-                        <span>Bills & Loans</span>
-                    </div>
-                    <div className="bank-purpose">Monthly Obligations</div>
-                    <div className="allocation-list mini-list">
-                        {fixedObligations.map(item => (
-                            <div key={item.id} className={`allocation-item-grid prio-${item.priority}`}>
-                                <div className="item-name-group">
-                                    <span className="item-name-text" title={item.name}>{item.name}</span>
-                                    <span className="alloc-prio-tag">{item.priority}</span>
+            {/* Main Grid */}
+            <div className={`grid grid-cols-1 lg:grid-cols-3 gap-6 ${isOpen ? '' : ''}`}>
+
+                {/* 💳 Column 1: Bills & Loans */}
+                <Card className="bg-[#1e293b] border-white/5 shadow-xl flex flex-col h-full">
+                    <CardHeader className="border-b border-white/5 pb-4">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-emerald-500/10 rounded-md">
+                                <Receipt className="text-emerald-500" size={20} />
+                            </div>
+                            <div>
+                                <CardTitle className="text-lg text-white">Bills & Loans</CardTitle>
+                                <CardDescription className="text-emerald-400 font-medium">Monthly Obligations</CardDescription>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="flex-1 overflow-y-auto max-h-[500px] p-0">
+                        <div className="divide-y divide-white/5">
+                            {fixedObligations.map(item => (
+                                <div key={item.id} className="p-4 hover:bg-white/5 transition-colors">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="font-medium text-slate-200 truncate pr-2" title={item.name}>{item.name}</span>
+                                        <Badge variant="outline" className={`
+                                            uppercase text-[10px] tracking-wider border-0 font-bold px-1.5 py-0.5
+                                            ${item.priority === 'high' ? 'bg-red-500/20 text-red-400' : 'bg-slate-700 text-slate-400'}
+                                        `}>
+                                            {item.priority}
+                                        </Badge>
+                                    </div>
+                                    <div className="flex items-baseline justify-between">
+                                        <div className="text-lg font-bold text-white">
+                                            <span className="text-emerald-400">₱ {Math.round(suggestions[item.id]).toLocaleString()}</span>
+                                        </div>
+                                        <div className="text-xs text-slate-500">
+                                            Target: ₱ {Math.round(item.monthlyTarget).toLocaleString()}
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="item-values-group">
-                                    <span className="val-suggested">₱ {Math.round(suggestions[item.id]).toLocaleString()}</span>
-                                    <span className="val-divider">/</span>
-                                    <span className="val-required">₱ {Math.round(item.monthlyTarget).toLocaleString()}</span>
+                            ))}
+                            {fixedObligations.length === 0 && (
+                                <div className="p-8 text-center text-slate-500 text-sm italic">No obligations found.</div>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* 🎯 Column 2: Savings Goals */}
+                <Card className="bg-[#1e293b] border-white/5 shadow-xl flex flex-col h-full">
+                    <CardHeader className="border-b border-white/5 pb-4">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-indigo-500/10 rounded-md">
+                                <PiggyBank className="text-indigo-500" size={20} />
+                            </div>
+                            <div>
+                                <CardTitle className="text-lg text-white">Savings Goals</CardTitle>
+                                <CardDescription className="text-indigo-400 font-medium">Balanced Shared Growth</CardDescription>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="flex-1 overflow-y-auto max-h-[500px] p-0">
+                        <div className="divide-y divide-white/5">
+                            {savingsTargets.map(item => (
+                                <div key={item.id} className="p-4 hover:bg-white/5 transition-colors">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="font-medium text-slate-200 truncate pr-2" title={item.name}>{item.name}</span>
+                                        <Badge variant="outline" className={`
+                                            uppercase text-[10px] tracking-wider border-0 font-bold px-1.5 py-0.5
+                                            ${item.priority === 'high' ? 'bg-amber-500/20 text-amber-400' : 'bg-blue-500/10 text-blue-400'}
+                                        `}>
+                                            {item.priority}
+                                        </Badge>
+                                    </div>
+                                    <div className="flex items-baseline justify-between">
+                                        <div className="text-lg font-bold text-white">
+                                            <span className="text-indigo-400">₱ {Math.round(suggestions[item.id]).toLocaleString()}</span>
+                                        </div>
+                                        <div className="text-xs text-slate-500">
+                                            Target: ₱ {Math.round(item.monthlyTarget).toLocaleString()}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                            {savingsTargets.length === 0 && (
+                                <div className="p-8 text-center text-slate-500 text-sm italic">No savings goals found.</div>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* 🛍️ Column 3: Spending Summary */}
+                <Card className="bg-[#1e293b] border-white/5 shadow-xl flex flex-col h-full border-t-4 border-t-amber-500/50">
+                    <CardHeader className="border-b border-white/5 pb-4">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-amber-500/10 rounded-md">
+                                <Wallet className="text-amber-500" size={20} />
+                            </div>
+                            <div>
+                                <CardTitle className="text-lg text-white">Spending Cash</CardTitle>
+                                <CardDescription className="text-amber-400 font-medium">Remaining Surplus</CardDescription>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="p-6 space-y-6">
+                        <div className="space-y-3 p-4 bg-slate-900/50 rounded-lg border border-white/5">
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-slate-400">Base Allowance:</span>
+                                <span className="text-slate-200 font-medium">₱ {Math.round(spendingAllowance).toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-slate-400">Income Surplus:</span>
+                                <span className="text-emerald-400 font-bold">+ ₱ {Math.round(finalSurplus).toLocaleString()}</span>
+                            </div>
+                        </div>
+
+                        <div className="text-center p-4 bg-gradient-to-br from-amber-500/10 to-orange-600/10 rounded-xl border border-amber-500/20">
+                            <span className="text-xs uppercase tracking-widest text-amber-500/80 font-bold block mb-1">Total Pocket Money</span>
+                            <span className={`text-3xl font-black ${shortfall > 0 ? 'text-red-400' : 'text-white'}`}>
+                                ₱ {Math.round(totalPocketMoney).toLocaleString()}
+                            </span>
+                        </div>
+
+                        <div className="space-y-3">
+                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Weekly Checklist:</p>
+                            <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+                                {unifiedItems.filter(i => suggestions[i.id] > 0.5).map(item => (
+                                    <div key={`check-${item.id}`} className="flex items-start gap-3 p-2 rounded-md hover:bg-white/5 transition-colors">
+                                        <CheckCircle2 size={16} className="text-indigo-400 mt-0.5 shrink-0" />
+                                        <span className="text-sm text-slate-300">
+                                            Move <span className="text-white font-bold">₱{Math.round(suggestions[item.id]).toLocaleString()}</span> to <strong className="text-slate-200">{item.name}</strong>
+                                        </span>
+                                    </div>
+                                ))}
+                                <div className="flex items-start gap-3 p-3 rounded-md bg-amber-500/10 border border-amber-500/20">
+                                    <CheckCircle2 size={16} className="text-amber-500 mt-0.5 shrink-0" />
+                                    <span className="text-sm text-slate-200">
+                                        Keep <span className="text-white font-bold">₱{Math.round(totalPocketMoney).toLocaleString()}</span> for <strong className="text-amber-400">Daily Spending</strong>
+                                    </span>
                                 </div>
                             </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* 🎯 Card 2: Savings Goals */}
-                <div className="bank-card savings-card">
-                    <div className="bank-header">
-                        <PiggyBank size={18} className="icon-savings" />
-                        <span>Savings Goals</span>
-                    </div>
-                    <div className="bank-purpose">Balanced Shared Growth</div>
-                    <div className="allocation-list mini-list">
-                        {savingsTargets.map(item => (
-                            <div key={item.id} className={`allocation-item-grid prio-${item.priority}`}>
-                                <div className="item-name-group">
-                                    <span className="item-name-text" title={item.name}>{item.name}</span>
-                                    <span className="alloc-prio-tag">{item.priority}</span>
-                                </div>
-                                <div className="item-values-group">
-                                    <span className="val-suggested">₱ {Math.round(suggestions[item.id]).toLocaleString()}</span>
-                                    <span className="val-divider">/</span>
-                                    <span className="val-required">₱ {Math.round(item.monthlyTarget).toLocaleString()}</span>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* 🛍️ Card 3: Spending Summary */}
-                <div className="bank-card bpi-card">
-                    <div className="bank-header">
-                        <Wallet size={18} className="icon-spending" />
-                        <span>Spending Cash</span>
-                    </div>
-
-                    <div className="waterfall-breakdown">
-                        <div className="wf-row">
-                            <span>Base Allowance:</span>
-                            <span>₱ {Math.round(spendingAllowance).toLocaleString()}</span>
                         </div>
-                        <div className="wf-row">
-                            <span>Income Surplus:</span>
-                            <span className="success-text">+ ₱ {Math.round(finalSurplus).toLocaleString()}</span>
-                        </div>
-                    </div>
-
-                    <div className="balance-display small-pad border-top">
-                        <span className="balance-label">Total Pocket Money</span>
-                        <span className={`balance-amount ${shortfall > 0 ? 'warning' : ''}`}>
-                            ₱ {Math.round(totalPocketMoney).toLocaleString()}
-                        </span>
-                    </div>
-
-                    <div className="transfer-checklist">
-                        <p className="checklist-title">Weekly Checklist:</p>
-                        {unifiedItems.filter(i => suggestions[i.id] > 0.5).map(item => (
-                            <div key={`check-${item.id}`} className="check-item">
-                                <CheckCircle2 size={14} className="check-icon" />
-                                <span style={{ fontSize: '0.8rem' }}>Move ₱{Math.round(suggestions[item.id]).toLocaleString()} to <strong>{item.name}</strong></span>
-                            </div>
-                        ))}
-                        <div className="check-item highlight">
-                            <CheckCircle2 size={14} className="check-icon" />
-                            <span style={{ fontSize: '0.8rem' }}>Keep ₱{Math.round(totalPocketMoney).toLocaleString()} for <strong>Daily Spending</strong></span>
-                        </div>
-                    </div>
-                </div>
+                    </CardContent>
+                </Card>
             </div>
         </div>
     );
 
     if (isOpen) {
         return (
-            <div className="modal-overlay">
-                <div className="modal-content large">
-                    {content}
-                </div>
-            </div>
+            <Dialog open={true} onOpenChange={onClose}>
+                <DialogContent className="max-w-5xl h-[90vh] overflow-hidden flex flex-col bg-[#0f172a] border-white/10 p-0">
+                    <div className="overflow-y-auto p-6">
+                        {content}
+                    </div>
+                </DialogContent>
+            </Dialog>
         );
     }
 

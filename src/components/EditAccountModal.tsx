@@ -1,8 +1,13 @@
 import React, { useState } from 'react';
-import { X, Plus, Minus, RefreshCw } from 'lucide-react';
+import { Plus, Minus, RefreshCw } from 'lucide-react';
 import { useAccountStore } from '../stores/accountStore';
 import type { Account } from '../lib/db';
 import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 interface EditAccountModalProps {
     account: Account;
@@ -43,108 +48,124 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({ account, onC
     };
 
     return (
-        <div className="modal-overlay" onClick={onClose}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                <div className="modal-header">
-                    <h2>Edit Account</h2>
-                    <button className="btn-icon" onClick={onClose}>
-                        <X size={20} />
-                    </button>
-                </div>
+        <Dialog open={true} onOpenChange={onClose}>
+            <DialogContent className="sm:max-w-[425px] bg-[#1e293b] border-white/10 text-white">
+                <DialogHeader>
+                    <DialogTitle>Edit Account</DialogTitle>
+                    <DialogDescription className="text-slate-400">
+                        {account.name} • Current Balance: <span className="text-white font-medium">₱{account.balance.toLocaleString()}</span>
+                    </DialogDescription>
+                </DialogHeader>
 
-                <form onSubmit={handleSubmit}>
-                    <div className="form-group">
-                        <label>Name</label>
-                        <input
-                            type="text"
-                            className="styled-input"
-                            style={{ paddingLeft: '1rem' }}
+                <form onSubmit={handleSubmit} className="space-y-6 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="name" className="text-slate-300">Account Name</Label>
+                        <Input
+                            id="name"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             placeholder="Account name"
+                            className="bg-slate-800 border-white/10 text-white"
                             required
                         />
                     </div>
 
-                    <div className="form-group">
-                        <label>Current Balance</label>
-                        <div className="balance-display-input">
-                            ₱ {account.balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </div>
-                    </div>
-
-                    <div className="form-group">
-                        <label>Action</label>
-                        <div className="mode-selector">
-                            <button
+                    <div className="space-y-3">
+                        <Label className="text-slate-300">Action</Label>
+                        <div className="grid grid-cols-3 gap-2">
+                            <Button
                                 type="button"
-                                className={`mode-btn ${mode === 'add' ? 'active' : ''}`}
+                                variant={mode === 'add' ? 'default' : 'outline'}
+                                className={cn(
+                                    "flex flex-col h-auto py-3 gap-1 border-white/10 hover:bg-white/5 hover:text-white",
+                                    mode === 'add'
+                                        ? "bg-emerald-500 hover:bg-emerald-600 text-white border-transparent"
+                                        : "bg-slate-800 text-slate-400"
+                                )}
                                 onClick={() => setMode('add')}
                             >
-                                <Plus size={20} />
-                                <span>Add</span>
-                            </button>
-                            <button
+                                <Plus size={18} />
+                                <span className="text-xs">Add</span>
+                            </Button>
+                            <Button
                                 type="button"
-                                className={`mode-btn ${mode === 'remove' ? 'active' : ''}`}
+                                variant={mode === 'remove' ? 'default' : 'outline'}
+                                className={cn(
+                                    "flex flex-col h-auto py-3 gap-1 border-white/10 hover:bg-white/5 hover:text-white",
+                                    mode === 'remove'
+                                        ? "bg-rose-500 hover:bg-rose-600 text-white border-transparent"
+                                        : "bg-slate-800 text-slate-400"
+                                )}
                                 onClick={() => setMode('remove')}
                             >
-                                <Minus size={20} />
-                                <span>Remove</span>
-                            </button>
-                            <button
+                                <Minus size={18} />
+                                <span className="text-xs">Remove</span>
+                            </Button>
+                            <Button
                                 type="button"
-                                className={`mode-btn ${mode === 'update' ? 'active' : ''}`}
+                                variant={mode === 'update' ? 'default' : 'outline'}
+                                className={cn(
+                                    "flex flex-col h-auto py-3 gap-1 border-white/10 hover:bg-white/5 hover:text-white",
+                                    mode === 'update'
+                                        ? "bg-indigo-500 hover:bg-indigo-600 text-white border-transparent"
+                                        : "bg-slate-800 text-slate-400"
+                                )}
                                 onClick={() => setMode('update')}
                             >
-                                <RefreshCw size={20} />
-                                <span>Update</span>
-                            </button>
+                                <RefreshCw size={18} />
+                                <span className="text-xs">Set</span>
+                            </Button>
                         </div>
                     </div>
 
-                    <div className="form-group">
-                        <label>
+                    <div className="space-y-2">
+                        <Label htmlFor="amount" className="text-slate-300">
                             {mode === 'add' && 'Amount to Add'}
                             {mode === 'remove' && 'Amount to Remove'}
-                            {mode === 'update' && 'Exact Balance'}
-                        </label>
-                        <div className="input-wrapper">
-                            <span className="currency-symbol-prefix">₱</span>
-                            <input
+                            {mode === 'update' && 'New Balance Amount'}
+                        </Label>
+                        <div className="relative">
+                            <span className="absolute left-3 top-2.5 text-slate-400 text-sm">₱</span>
+                            <Input
+                                id="amount"
                                 type="number"
                                 step="0.01"
-                                className="styled-input"
-                                autoFocus
                                 value={amount}
                                 onChange={(e) => setAmount(e.target.value)}
                                 placeholder="0.00"
+                                className="pl-7 bg-slate-800 border-white/10 text-white"
+                                autoFocus
                                 required
                             />
                         </div>
                         {(mode === 'add' || mode === 'remove') && (
-                            <div className="help-text-preview">
-                                New balance will be:{' '}
-                                <span className="preview-value">
-                                    ₱ {(account.balance + (mode === 'add' ? 1 : -1) * (parseFloat(amount) || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                </span>
-                            </div>
+                            <p className="text-xs text-slate-400 text-right">
+                                New balance: <span className="text-white font-medium">₱ {(account.balance + (mode === 'add' ? 1 : -1) * (parseFloat(amount) || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                            </p>
                         )}
                         {mode === 'update' && (
-                            <p className="help-text-preview">This will manually override the balance.</p>
+                            <p className="text-xs text-slate-500 text-right">This will override the current balance.</p>
                         )}
                     </div>
 
-                    <div className="modal-actions">
-                        <button type="button" className="btn-modal-cancel" onClick={onClose}>
+                    <DialogFooter>
+                        <Button type="button" variant="ghost" onClick={onClose} className="text-slate-400 hover:text-white hover:bg-white/10">
                             Cancel
-                        </button>
-                        <button type="submit" className="btn-modal-submit">
-                            {mode === 'add' ? 'Confirm Addition' : mode === 'remove' ? 'Confirm Removal' : 'Update Balance'}
-                        </button>
-                    </div>
+                        </Button>
+                        <Button
+                            type="submit"
+                            className={cn(
+                                "text-white min-w-[120px]",
+                                mode === 'add' && "bg-emerald-500 hover:bg-emerald-600",
+                                mode === 'remove' && "bg-rose-500 hover:bg-rose-600",
+                                mode === 'update' && "bg-indigo-500 hover:bg-indigo-600"
+                            )}
+                        >
+                            {mode === 'add' ? 'Confirm Add' : mode === 'remove' ? 'Confirm Remove' : 'Update Balance'}
+                        </Button>
+                    </DialogFooter>
                 </form>
-            </div>
-        </div>
+            </DialogContent>
+        </Dialog>
     );
 };
