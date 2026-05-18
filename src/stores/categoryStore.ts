@@ -14,6 +14,9 @@ interface CategoryStore {
     getCategoriesByType: (type: 'income' | 'expense') => Category[];
 }
 
+// Guard flag to prevent concurrent seed calls
+let isSeeding = false;
+
 export const useCategoryStore = create<CategoryStore>((set, get) => ({
     categories: [],
     loading: false,
@@ -29,6 +32,7 @@ export const useCategoryStore = create<CategoryStore>((set, get) => ({
         const { data, error } = await supabase
             .from('categories')
             .select('*')
+            .eq('user_id', user.id)
             .order('name', { ascending: true });
 
         if (error) {
@@ -36,17 +40,24 @@ export const useCategoryStore = create<CategoryStore>((set, get) => ({
             toast.error('Failed to sync categories');
             set({ loading: false });
         } else {
-            if (data && data.length === 0) {
-                // Auto-seed samples if empty
-                const { data: { user } } = await supabase.auth.getUser();
-                if (user) {
+            if (data && data.length === 0 && !isSeeding) {
+                // Auto-seed defaults only once — guard against concurrent calls
+                isSeeding = true;
+                try {
                     const seedData = defaultCategories.map(c => ({ ...c, user_id: user.id }));
-                    await supabase.from('categories').insert(seedData);
+                    // Use upsert so duplicate calls are safe (DB-level unique constraint required)
+                    await supabase
+                        .from('categories')
+                        .upsert(seedData, { onConflict: 'user_id,name,type', ignoreDuplicates: true });
                     // Re-fetch after seeding
-                    const { data: seeded } = await supabase.from('categories').select('*').order('name', { ascending: true });
+                    const { data: seeded } = await supabase
+                        .from('categories')
+                        .select('*')
+                        .eq('user_id', user.id)
+                        .order('name', { ascending: true });
                     set({ categories: seeded as Category[], loading: false });
-                } else {
-                    set({ categories: [], loading: false });
+                } finally {
+                    isSeeding = false;
                 }
             } else {
                 set({ categories: data as Category[], loading: false });
@@ -105,3 +116,4 @@ export const useCategoryStore = create<CategoryStore>((set, get) => ({
         return get().categories.filter(c => c.type === type);
     },
 }));
+
